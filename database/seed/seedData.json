@@ -1,0 +1,394 @@
+{
+  "service_categories": [
+    {
+      "service_id": "srv_ac",
+      "name": "AC Repair & Service",
+      "slug": "ac-repair",
+      "description": "AC servicing, gas charging, compressor repair, uninstallation and deep duct cleaning",
+      "icon": "AirVent",
+      "active": true
+    },
+    {
+      "service_id": "srv_elec",
+      "name": "Electrician",
+      "slug": "electrician",
+      "description": "Wiring repair, short circuit fixes, fan/switch installation, MCB & inverter troubleshooting",
+      "icon": "Zap",
+      "active": true
+    },
+    {
+      "service_id": "srv_plumb",
+      "name": "Plumber",
+      "slug": "plumber",
+      "description": "Pipe leaks, tap & sanitary fittings, water motor setup, drainage unclogging, geyser piping",
+      "icon": "Wrench",
+      "active": true
+    },
+    {
+      "service_id": "srv_paint",
+      "name": "Painter",
+      "slug": "painter",
+      "description": "Interior & exterior wall painting, waterproof putty, texture coating and enamel touchups",
+      "icon": "Paintbrush",
+      "active": true
+    },
+    {
+      "service_id": "srv_carp",
+      "name": "Carpenter",
+      "slug": "carpenter",
+      "description": "Door & lock fixing, modular kitchen adjustments, custom furniture repair, wardrobe sliding tracks",
+      "icon": "Hammer",
+      "active": true
+    },
+    {
+      "service_id": "srv_clean",
+      "name": "Deep Cleaning",
+      "slug": "cleaning",
+      "description": "Full home deep sanitization, bathroom scrub, kitchen de-greasing, sofa & carpet shampooing",
+      "icon": "Sparkles",
+      "active": true
+    },
+    {
+      "service_id": "srv_appliance",
+      "name": "Appliance Repair",
+      "slug": "appliance-repair",
+      "description": "Washing machine, refrigerator, microwave and water purifier service & PCB repair",
+      "icon": "Tv",
+      "active": true
+    }
+  ],
+  "users": [
+    {
+      "user_id": "usr_cust_1",
+      "name": "Priya Sharma",
+      "phone": "9876543210",
+      "address": "Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal",
+      "role": "customer",
+      "created_at": "2026-01-10T10:00:00Z"
+    },
+    {
+      "user_id": "usr_cust_2",
+      "name": "Amit Patel",
+      "phone": "9826012345",
+      "address": "Plot 18, Gulmohar Colony, Arera, Bhopal",
+      "role": "customer",
+      "created_at": "2026-01-15T11:30:00Z"
+    },
+    {
+      "user_id": "usr_worker_1",
+      "name": "Ramesh Kumar",
+      "phone": "9827011223",
+      "address": "Bhopal Junction Area, Bhopal",
+      "role": "worker",
+      "created_at": "2025-06-12T08:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_2",
+      "name": "Suresh Carpenter",
+      "phone": "9827022334",
+      "address": "Kolar Road, Bhopal",
+      "role": "worker",
+      "created_at": "2025-07-20T09:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_3",
+      "name": "Mukesh Sharma",
+      "phone": "9827033445",
+      "address": "BHEL Township, Govindpura, Bhopal",
+      "role": "worker",
+      "created_at": "2025-05-18T10:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_4",
+      "name": "Sunil Verma",
+      "phone": "9827044556",
+      "address": "Shahpura Sector C, Bhopal",
+      "role": "worker",
+      "created_at": "2025-09-01T12:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_5",
+      "name": "Dinesh Yadav",
+      "phone": "9827055667",
+      "address": "Ashoka Garden, Bhopal",
+      "role": "worker",
+      "created_at": "2025-10-10T14:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_6",
+      "name": "Babloo Prajapati",
+      "phone": "9827066778",
+      "address": "Huzur Suburb, Bhopal",
+      "role": "worker",
+      "created_at": "2026-02-01T11:00:00Z"
+    },
+    {
+      "user_id": "usr_worker_7",
+      "name": "Raju Painter",
+      "phone": "9827077889",
+      "address": "Nehru Nagar, Bhopal",
+      "role": "worker",
+      "created_at": "2025-08-14T09:30:00Z"
+    },
+    {
+      "user_id": "usr_admin_1",
+      "name": "Admin Officer",
+      "phone": "9999999999",
+      "address": "HireLocal Operations Hub, MP Nagar, Bhopal",
+      "role": "admin",
+      "created_at": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "workers": [
+    {
+      "worker_id": "wrk_1",
+      "user_id": "usr_worker_1",
+      "name": "Ramesh Kumar",
+      "phone": "9827011223",
+      "profession": "AC Repair & Service",
+      "services": ["AC Repair & Service", "Appliance Repair"],
+      "skills": ["Split AC Servicing", "Gas Charging", "Inverter AC PCB Check", "Compressor Replacement"],
+      "experience": 7,
+      "language": "hi",
+      "location": {
+        "name": "MP Nagar, Bhopal",
+        "lat": 23.2332,
+        "lng": 77.4343
+      },
+      "service_radius": 20,
+      "communication_type": "smartphone",
+      "rating": 4.8,
+      "reliability": 96,
+      "completed_jobs": 120,
+      "total_accepted_jobs": 125,
+      "daily_rate": 600,
+      "status": "available",
+      "bio": "Certified AC technician with 7+ years of experience across Daikin, Voltas, LG and Samsung models. Quick diagnosis with transparent pricing."
+    },
+    {
+      "worker_id": "wrk_2",
+      "user_id": "usr_worker_2",
+      "name": "Suresh Carpenter",
+      "phone": "9827022334",
+      "profession": "Carpenter",
+      "services": ["Carpenter"],
+      "skills": ["Furniture Repair", "Modular Kitchen", "Door Hinges & Lock Fix", "Custom Woodwork"],
+      "experience": 9,
+      "language": "hi",
+      "location": {
+        "name": "Kolar Road, Bhopal",
+        "lat": 23.1865,
+        "lng": 77.4243
+      },
+      "service_radius": 25,
+      "communication_type": "non_smartphone",
+      "rating": 4.7,
+      "reliability": 94,
+      "completed_jobs": 85,
+      "total_accepted_jobs": 90,
+      "daily_rate": 700,
+      "status": "available",
+      "bio": "Experienced carpenter taking job calls directly on standard phone via AI CallBot. Master in solid wood furniture and kitchen woodwork."
+    },
+    {
+      "worker_id": "wrk_3",
+      "user_id": "usr_worker_3",
+      "name": "Mukesh Sharma",
+      "phone": "9827033445",
+      "profession": "Electrician",
+      "services": ["Electrician"],
+      "skills": ["House Wiring", "MCB Tripping Diagnosis", "Ceiling Fan Installation", "Inverter & Battery Wiring"],
+      "experience": 11,
+      "language": "hi",
+      "location": {
+        "name": "Govindpura, Bhopal",
+        "lat": 23.2599,
+        "lng": 77.4646
+      },
+      "service_radius": 25,
+      "communication_type": "non_smartphone",
+      "rating": 4.9,
+      "reliability": 98,
+      "completed_jobs": 142,
+      "total_accepted_jobs": 145,
+      "daily_rate": 550,
+      "status": "available",
+      "bio": "Licensed A-grade electrician with 11 years field experience. Available over voice callbot. Dependable emergency electrical repair."
+    },
+    {
+      "worker_id": "wrk_4",
+      "user_id": "usr_worker_4",
+      "name": "Sunil Verma",
+      "phone": "9827044556",
+      "profession": "Electrician",
+      "services": ["Electrician"],
+      "skills": ["Switchboard Upgrade", "LED Concealed Lighting", "Earthing Check"],
+      "experience": 4,
+      "language": "en",
+      "location": {
+        "name": "Shahpura, Bhopal",
+        "lat": 23.1973,
+        "lng": 77.4337
+      },
+      "service_radius": 15,
+      "communication_type": "smartphone",
+      "rating": 4.5,
+      "reliability": 88,
+      "completed_jobs": 40,
+      "total_accepted_jobs": 45,
+      "daily_rate": 450,
+      "status": "available",
+      "bio": "Punctual technician specialized in modern LED decorative lights and smart home switches."
+    },
+    {
+      "worker_id": "wrk_5",
+      "user_id": "usr_worker_5",
+      "name": "Dinesh Yadav",
+      "phone": "9827055667",
+      "profession": "AC Repair & Service",
+      "services": ["AC Repair & Service"],
+      "skills": ["Window AC Fix", "Filter Wash", "Coil Soldering"],
+      "experience": 3,
+      "language": "hi",
+      "location": {
+        "name": "Ashoka Garden, Bhopal",
+        "lat": 23.2647,
+        "lng": 77.4287
+      },
+      "service_radius": 18,
+      "communication_type": "smartphone",
+      "rating": 4.2,
+      "reliability": 75,
+      "completed_jobs": 22,
+      "total_accepted_jobs": 29,
+      "daily_rate": 500,
+      "status": "available",
+      "bio": "Budget-friendly AC servicing with prompt response time."
+    },
+    {
+      "worker_id": "wrk_6",
+      "user_id": "usr_worker_6",
+      "name": "Babloo Prajapati",
+      "phone": "9827066778",
+      "profession": "Plumber",
+      "services": ["Plumber"],
+      "skills": ["Pipeline Leakage Repair", "Overhead Tank Valve", "Taps & Mixer Fitting"],
+      "experience": 5,
+      "language": "hi",
+      "location": {
+        "name": "Arera Hills, Bhopal",
+        "lat": 23.2384,
+        "lng": 77.4116
+      },
+      "service_radius": 20,
+      "communication_type": "non_smartphone",
+      "rating": 5.0,
+      "reliability": null,
+      "completed_jobs": 1,
+      "total_accepted_jobs": 1,
+      "daily_rate": 500,
+      "status": "available",
+      "bio": "New skilled plumber on HireLocal. Works via CallBot voice service. Hardworking and sincere."
+    },
+    {
+      "worker_id": "wrk_7",
+      "user_id": "usr_worker_7",
+      "name": "Raju Painter",
+      "phone": "9827077889",
+      "profession": "Painter",
+      "services": ["Painter"],
+      "skills": ["Wall Putty", "Emulsion Paint", "Waterproofing", "Wood Polish"],
+      "experience": 6,
+      "language": "hi",
+      "location": {
+        "name": "Nehru Nagar, Bhopal",
+        "lat": 23.2100,
+        "lng": 77.3872
+      },
+      "service_radius": 20,
+      "communication_type": "smartphone",
+      "rating": 4.6,
+      "reliability": 91,
+      "completed_jobs": 65,
+      "total_accepted_jobs": 71,
+      "daily_rate": 650,
+      "status": "available",
+      "bio": "Neat and clean painting service. Specialist in Asian Paints Royale emulsion and dampproof coating."
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "job_demo_101",
+      "customer_id": "usr_cust_1",
+      "worker_id": "wrk_1",
+      "service_type": "AC Repair & Service",
+      "address": "Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal",
+      "latitude": 23.2332,
+      "longitude": 77.4343,
+      "required_date": "2026-09-26",
+      "preferred_time": "morning",
+      "description": "Split AC in master bedroom not cooling properly and making vibrating noise from outdoor unit.",
+      "status": "ACCEPTED",
+      "estimated_cost": 650,
+      "created_at": "2026-09-24T10:15:00Z",
+      "updated_at": "2026-09-24T10:30:00Z"
+    },
+    {
+      "job_id": "job_demo_102",
+      "customer_id": "usr_cust_2",
+      "worker_id": "wrk_3",
+      "service_type": "Electrician",
+      "address": "Plot 18, Gulmohar Colony, Arera, Bhopal",
+      "latitude": 23.2156,
+      "longitude": 77.4330,
+      "required_date": "2026-09-25",
+      "preferred_time": "evening",
+      "description": "Main circuit breaker tripping whenever geyser is turned on.",
+      "status": "CUSTOMER_AND_WORKER_CONNECTED",
+      "estimated_cost": 500,
+      "created_at": "2026-09-24T09:00:00Z",
+      "updated_at": "2026-09-24T09:45:00Z"
+    },
+    {
+      "job_id": "job_demo_100",
+      "customer_id": "usr_cust_1",
+      "worker_id": "wrk_1",
+      "service_type": "AC Repair & Service",
+      "address": "Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal",
+      "latitude": 23.2332,
+      "longitude": 77.4343,
+      "required_date": "2026-09-18",
+      "preferred_time": "afternoon",
+      "description": "Routine AC seasonal foam cleaning and copper coil checkup.",
+      "status": "COMPLETED",
+      "estimated_cost": 600,
+      "created_at": "2026-09-17T14:00:00Z",
+      "updated_at": "2026-09-18T16:00:00Z"
+    }
+  ],
+  "ratings": [
+    {
+      "rating_id": "rat_100",
+      "job_id": "job_demo_100",
+      "customer_id": "usr_cust_1",
+      "worker_id": "wrk_1",
+      "rating": 5,
+      "review": "Ramesh ji arrived promptly on Tuesday, diagnosed the slow cooling immediately and did thorough cleaning. Very polite and honest worker!",
+      "created_at": "2026-09-18T17:00:00Z"
+    }
+  ],
+  "call_logs": [
+    {
+      "call_id": "call_demo_1",
+      "worker_id": "wrk_2",
+      "job_id": "job_demo_101",
+      "call_type": "job_notification",
+      "language": "hi",
+      "start_time": "2026-09-24T10:16:00Z",
+      "duration": 48,
+      "response": "ACCEPTED",
+      "status": "completed",
+      "metadata": "Worker pressed 1 after hearing job details in Hindi."
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+/**
+ * Standardized status vocabulary and constants across Frontend, Backend, Notifications, and CallBot.
+ * As defined in Section 9 of the HireLocal Build Specification.
+ */
+
+export const JOB_STATUS = Object.freeze({
+  REQUESTED: 'REQUESTED',
+  PENDING_WORKER_RESPONSE: 'PENDING_WORKER_RESPONSE',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  CUSTOMER_AND_WORKER_CONNECTED: 'CUSTOMER_AND_WORKER_CONNECTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+});
+
+export const USER_ROLE = Object.freeze({
+  CUSTOMER: 'customer',
+  WORKER: 'worker',
+  ADMIN: 'admin'
+});
+
+export const COMMUNICATION_TYPE = Object.freeze({
+  SMARTPHONE: 'smartphone',
+  NON_SMARTPHONE: 'non_smartphone'
+});
+
+export const WORKER_STATUS = Object.freeze({
+  AVAILABLE: 'available',
+  BUSY: 'busy',
+  OFFLINE: 'offline',
+  UNVERIFIED: 'unverified'
+});
+
+export const PREFERRED_TIME_SLOT = Object.freeze({
+  MORNING: 'morning',
+  AFTERNOON: 'afternoon',
+  EVENING: 'evening',
+  FLEXIBLE: 'flexible'
+});
+
+export const PREFERRED_TIME_LABELS = Object.freeze({
+  [PREFERRED_TIME_SLOT.MORNING]: 'Morning (8 AM - 12 PM)',
+  [PREFERRED_TIME_SLOT.AFTERNOON]: 'Afternoon (12 PM - 4 PM)',
+  [PREFERRED_TIME_SLOT.EVENING]: 'Evening (4 PM - 8 PM)',
+  [PREFERRED_TIME_SLOT.FLEXIBLE]: 'Flexible / Any Time'
+});
+
+export const CALLBOT_INTENTS = Object.freeze({
+  ACCEPT: 'ACCEPT',
+  REJECT: 'REJECT',
+  REPEAT: 'REPEAT',
+  HELP: 'HELP',
+  CANCEL: 'CANCEL'
+});
+
+export const CALLBOT_REGISTRATION_STATES = Object.freeze({
+  START: 'START',
+  SELECT_LANGUAGE: 'SELECT_LANGUAGE',
+  CHECK_EXISTING_ACCOUNT: 'CHECK_EXISTING_ACCOUNT',
+  NEW_REGISTRATION: 'NEW_REGISTRATION',
+  GET_NAME: 'GET_NAME',
+  GET_PROFESSION: 'GET_PROFESSION',
+  GET_SKILLS: 'GET_SKILLS',
+  GET_LOCATION: 'GET_LOCATION',
+  GET_EXPERIENCE: 'GET_EXPERIENCE',
+  CONFIRM_DETAILS: 'CONFIRM_DETAILS',
+  REGISTRATION_COMPLETE: 'REGISTRATION_COMPLETE'
+});
+
+export const CALLBOT_JOB_STATES = Object.freeze({
+  START_CALL: 'START_CALL',
+  VERIFY_WORKER: 'VERIFY_WORKER',
+  SELECT_LANGUAGE: 'SELECT_LANGUAGE',
+  INTRODUCE_JOB: 'INTRODUCE_JOB',
+  READ_SERVICE: 'READ_SERVICE',
+  READ_DATE: 'READ_DATE',
+  READ_LOCATION: 'READ_LOCATION',
+  READ_DESCRIPTION: 'READ_DESCRIPTION',
+  ASK_DECISION: 'ASK_DECISION',
+  HANDLE_DECISION: 'HANDLE_DECISION',
+  UPDATE_DATABASE: 'UPDATE_DATABASE',
+  END_CALL: 'END_CALL'
+});
