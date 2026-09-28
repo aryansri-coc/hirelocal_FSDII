@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
-import { Wrench, Menu, X, User, LogOut, CheckCircle, ShieldCheck, Briefcase } from 'lucide-react';
+import { Home, MapPin, Bell, ChevronDown, Wrench, Menu, X, User, LogOut, CheckCircle, ShieldCheck, Briefcase } from 'lucide-react';
 
 export default function Navbar({
   activeTab,
@@ -104,344 +104,107 @@ export default function Navbar({
         }}>
           {/* LEFT: Logo + Wordmark */}
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onClick={() => navigateTo(isAuthenticated ? (role === 'worker' ? 'worker_dashboard' : role === 'admin' ? 'admin_dashboard' : 'customer_dashboard') : 'landing')}
+            className="hl-brand-logo"
+            onClick={() => navigateTo('landing')}
           >
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF'
-            }}>
-              <Wrench size={20} strokeWidth={2.2} />
+            <div className="hl-brand-icon">
+              <Home size={19} strokeWidth={2.5} />
             </div>
-            <span style={{
-              fontSize: '20px',
-              fontWeight: 800,
-              color: 'var(--text-main)',
-              letterSpacing: '-0.02em'
-            }}>
-              HireLocal
+            <span className="hl-brand-name">
+              Hire<span>Local</span>
             </span>
           </div>
 
           {/* CENTER: Navigation Links */}
-          <nav style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px'
-          }} className="desktop-nav">
-            {!isAuthenticated ? (
-              <>
-                <button
-                  onClick={() => navigateTo('explore')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'explore' ? 600 : 500,
-                    color: activeTab === 'explore' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Find Workers
-                </button>
-                <button
-                  onClick={() => navigateTo('landing')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  How It Works
-                </button>
-                <button
-                  onClick={onOpenWorkerOnboard}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  For Workers
-                </button>
-                <button
-                  onClick={() => navigateTo('callbot_info')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'callbot_info' ? 600 : 500,
-                    color: activeTab === 'callbot_info' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  CallBot
-                </button>
-              </>
-            ) : role === 'customer' ? (
-              <>
-                <button
-                  onClick={() => navigateTo('customer_dashboard')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'customer_dashboard' ? 600 : 500,
-                    color: activeTab === 'customer_dashboard' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => navigateTo('explore')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'explore' ? 600 : 500,
-                    color: activeTab === 'explore' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Find Workers
-                </button>
-                <button
-                  onClick={() => navigateTo('customer_bookings')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'customer_bookings' ? 600 : 500,
-                    color: activeTab === 'customer_bookings' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  My Bookings
-                </button>
-                <button
-                  onClick={() => navigateTo('customer_profile')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'customer_profile' ? 600 : 500,
-                    color: activeTab === 'customer_profile' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Profile
-                </button>
-              </>
-            ) : role === 'worker' ? (
-              <>
-                <button
-                  onClick={() => navigateTo('worker_dashboard')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'worker_dashboard' ? 600 : 500,
-                    color: activeTab === 'worker_dashboard' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => navigateTo('worker_requests')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'worker_requests' ? 600 : 500,
-                    color: activeTab === 'worker_requests' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Job Requests
-                </button>
-                <button
-                  onClick={() => navigateTo('worker_jobs')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'worker_jobs' ? 600 : 500,
-                    color: activeTab === 'worker_jobs' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  My Jobs
-                </button>
-                <button
-                  onClick={() => navigateTo('worker_profile')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'worker_profile' ? 600 : 500,
-                    color: activeTab === 'worker_profile' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Rates & Profile
-                </button>
-              </>
-            ) : role === 'admin' ? (
-              <>
-                <button
-                  onClick={() => navigateTo('admin_dashboard')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'admin_dashboard' ? 600 : 500,
-                    color: activeTab === 'admin_dashboard' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Admin Overview
-                </button>
-                <button
-                  onClick={() => navigateTo('admin_users')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'admin_users' ? 600 : 500,
-                    color: activeTab === 'admin_users' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Users
-                </button>
-                <button
-                  onClick={() => navigateTo('admin_workers')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'admin_workers' ? 600 : 500,
-                    color: activeTab === 'admin_workers' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Workers
-                </button>
-                <button
-                  onClick={() => navigateTo('admin_jobs')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: 'var(--font-family)',
-                    fontSize: '15px',
-                    fontWeight: activeTab === 'admin_jobs' ? 600 : 500,
-                    color: activeTab === 'admin_jobs' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Jobs
-                </button>
-              </>
-            ) : null}
+          <nav className="hl-center-nav desktop-nav">
+            <button
+              type="button"
+              onClick={() => navigateTo('explore')}
+              className={`hl-nav-link ${activeTab === 'explore' ? 'is-active' : ''}`}
+            >
+              Find Workers
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeTab === 'landing') {
+                  const el = document.getElementById('how-it-works-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigateTo('landing');
+                  setTimeout(() => {
+                    const el = document.getElementById('how-it-works-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }
+              }}
+              className="hl-nav-link"
+            >
+              How It Works
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('customer_bookings')}
+              className={`hl-nav-link ${activeTab === 'customer_bookings' ? 'is-active' : ''}`}
+            >
+              My Bookings
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('messages')}
+              className={`hl-nav-link ${activeTab === 'messages' ? 'is-active' : ''}`}
+            >
+              Messages
+            </button>
           </nav>
 
-          {/* RIGHT: Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {!isAuthenticated ? (
-              <>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={onOpenLogin}
-                >
-                  Log In
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={onOpenSignup}
-                >
-                  Sign Up
-                </button>
-              </>
-            ) : (
-              <>
-                <NotificationDropdown onSelectNotification={(n) => {
-                  if (role === 'customer') navigateTo('customer_bookings');
-                  else if (role === 'worker') navigateTo('worker_requests');
-                }} />
+          {/* RIGHT: Location, Notifications, Profile */}
+          <div className="hl-nav-right-actions">
+            {/* Location Selector */}
+            <div
+              className="hl-location-pill"
+              onClick={() => navigateTo('explore')}
+              title="Change search location"
+            >
+              <MapPin size={14} style={{ color: 'var(--primary)' }} />
+              <span>Govindpura, Bihar</span>
+              <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} />
+            </div>
 
-                {/* Clean User Profile Tag */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '4px 10px 4px 6px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--surface-alt)'
-                }}>
-                  <div style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--primary)',
-                    color: '#FFFFFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
-                    {user?.name?.charAt(0) || 'U'}
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
-                    {user?.name?.split(' ')[0]}
-                  </span>
-                </div>
+            {/* Notification Bell */}
+            <NotificationDropdown onSelectNotification={(n) => {
+              if (role === 'customer') navigateTo('customer_bookings');
+              else if (role === 'worker') navigateTo('worker_requests');
+            }} />
 
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => logout(true)}
-                  title="Sign Out"
-                >
-                  <LogOut size={14} />
-                  <span>Sign Out</span>
-                </button>
-              </>
+            {/* User Profile Chip */}
+            <div
+              className="hl-profile-chip"
+              onClick={() => {
+                if (!isAuthenticated) onOpenLogin();
+                else navigateTo(role === 'worker' ? 'worker_dashboard' : role === 'admin' ? 'admin_dashboard' : 'customer_profile');
+              }}
+              title={isAuthenticated ? 'Account Profile' : 'Click to Log In'}
+            >
+              <div className="hl-profile-avatar-char">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+              </div>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--dark)' }}>
+                {user?.name ? user.name.split(' ')[0] : 'Aryan'}
+              </span>
+              <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} />
+            </div>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => logout(true)}
+                title="Sign Out"
+                style={{ padding: '6px 10px', height: '34px' }}
+              >
+                <LogOut size={14} />
+              </button>
             )}
 
             {/* Subtle Dev Testing Button */}
@@ -518,10 +281,10 @@ export default function Navbar({
             </button>
             <button
               className="btn btn-secondary"
-              onClick={() => navigateTo('callbot_info')}
+              onClick={() => navigateTo('messages')}
               style={{ justifyContent: 'flex-start' }}
             >
-              CallBot
+              Messages
             </button>
           </div>
         )}

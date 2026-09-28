@@ -3,11 +3,14 @@ import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import ServiceGrid from './components/ServiceGrid';
 import WorkerCard from './components/WorkerCard';
+import FindWorkersView from './components/FindWorkersView';
 import WorkerDetailModal from './components/WorkerDetailModal';
 import JobBookingModal from './components/JobBookingModal';
 import CustomerDashboard from './components/CustomerDashboard';
+import MyBookingsView from './components/MyBookingsView';
 import CustomerProfile from './components/CustomerProfile';
 import WorkerDashboard from './components/WorkerDashboard';
+import MessagesView from './components/MessagesView';
 import CallBotSimulator from './components/CallBotSimulator';
 import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
@@ -187,8 +190,8 @@ export default function App() {
         onOpenWorkerOnboard={() => setShowWorkerOnboard(true)}
       />
 
-      <main style={{ flex: 1, padding: activeTab === 'landing' ? '0' : '32px 0 64px' }}>
-        <div className={activeTab === 'landing' ? '' : 'container'}>
+      <main style={{ flex: 1, padding: (activeTab === 'landing' || activeTab === 'explore' || activeTab === 'customer_bookings') ? '0' : '32px 0 64px' }}>
+        <div className={(activeTab === 'landing' || activeTab === 'explore' || activeTab === 'customer_bookings') ? '' : 'container'}>
           {/* PUBLIC LANDING PAGE */}
           {activeTab === 'landing' && (
             <LandingPage
@@ -204,7 +207,11 @@ export default function App() {
               }}
               onSelectWorker={(w) => setSelectedWorkerDetail(w)}
               onBookWorker={(w) => handleBookWorker(w)}
-              onOpenCallbot={() => setActiveTab('callbot_info')}
+              onOpenCallbot={() => {
+                setSelectedService('Electrician');
+                setActiveTab('explore');
+                fetchWorkers('Electrician');
+              }}
               workers={workers}
               services={services}
             />
@@ -212,177 +219,28 @@ export default function App() {
 
           {/* EXPLORE / FIND WORKERS */}
           {activeTab === 'explore' && (
-            <div>
-              {/* Header */}
-              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 32px' }}>
-                <h1 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '8px' }}>
-                  Find Skilled Workers Near You
-                </h1>
-                <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
-                  Browse verified electricians, plumbers, and mechanics with transparent day-based rates.
-                </p>
-              </div>
-
-              {/* Filter Controls Bar */}
-              <div className="card" style={{ padding: '20px', marginBottom: '32px' }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '12px',
-                  alignItems: 'end'
-                }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Search Trade or Name</label>
-                    <input
-                      className="form-input"
-                      placeholder="e.g. AC Repair, Ramesh"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Location / City Hub</label>
-                    <select
-                      className="form-select"
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                    >
-                      <option value="Bhopal">MP Nagar, Bhopal</option>
-                      <option value="Indore">Vijay Nagar, Indore</option>
-                      <option value="Lucknow">Hazratganj, Lucknow</option>
-                      <option value="Jaipur">Malviya Nagar, Jaipur</option>
-                      <option value="Patna">Boring Road, Patna</option>
-                      <option value="Nagpur">Dharampeth, Nagpur</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Required Date</label>
-                    <input
-                      type="date"
-                      className="form-input"
-                      value={matchingDate}
-                      onChange={(e) => setMatchingDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Worker Channel</label>
-                    <select
-                      className="form-select"
-                      value={commTypeFilter}
-                      onChange={(e) => setCommTypeFilter(e.target.value)}
-                    >
-                      <option value="">All Workers</option>
-                      <option value="smartphone">Smartphone App Workers</option>
-                      <option value="non_smartphone">Basic Phone (AI CallBot)</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className="btn btn-secondary"
-                      style={{ flex: 1 }}
-                      onClick={() => fetchWorkers()}
-                    >
-                      Filter
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      style={{ flex: 1.5 }}
-                      onClick={handleRunMatchEngine}
-                    >
-                      <SlidersHorizontal size={14} />
-                      <span>Match & Rank</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Categories Grid */}
-              <ServiceGrid
-                services={services}
-                selectedService={selectedService}
-                onSelectService={handleSelectService}
-              />
-
-              {/* Results Grid Header */}
-              <div style={{
-                marginBottom: '20px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}>
-                <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 700 }}>
-                    Available Workers ({workers.length})
-                  </h2>
-                  {selectedService && (
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      Showing results for {selectedService}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleBookWorker({ profession: selectedService || 'Electrician' })}
-                >
-                  <Plus size={14} />
-                  <span>Direct Day Request</span>
-                </button>
-              </div>
-
-              {loadingWorkers ? (
-                <div className="card" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  Loading available professionals...
-                </div>
-              ) : workers.length === 0 ? (
-                <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
-                    No workers found matching your criteria
-                  </h3>
-                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                    Try clearing filters or search for another trade category.
-                  </p>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setSelectedService('');
-                      setSearchTerm('');
-                      setCommTypeFilter('');
-                      fetchWorkers('');
-                    }}
-                  >
-                    Clear All Filters
-                  </button>
-                </div>
-              ) : (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                  gap: '20px'
-                }}>
-                  {workers.map((worker) => (
-                    <WorkerCard
-                      key={worker.worker_id}
-                      worker={worker}
-                      onSelectWorker={(w) => setSelectedWorkerDetail(w)}
-                      onBookWorker={(w) => handleBookWorker(w)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <FindWorkersView
+              workers={workers}
+              selectedService={selectedService || 'Electrician'}
+              selectedLocation={selectedCity ? `${selectedCity}, Bihar` : 'Govindpura, Bihar'}
+              onBack={() => setActiveTab('landing')}
+              onSelectWorker={(w) => setSelectedWorkerDetail(w)}
+              onBookWorker={(w) => handleBookWorker(w)}
+            />
           )}
 
-          {/* CUSTOMER DASHBOARD & BOOKINGS */}
-          {(activeTab === 'customer_dashboard' || activeTab === 'customer_bookings') && (
+          {/* DEDICATED MY BOOKINGS VIEW (Mockup Image 2) */}
+          {activeTab === 'customer_bookings' && (
+            <MyBookingsView
+              onFindWorker={() => setActiveTab('explore')}
+              onOpenCallbotForJob={handleOpenCallbotForJob}
+            />
+          )}
+
+          {/* CUSTOMER DASHBOARD (OVERVIEW) */}
+          {activeTab === 'customer_dashboard' && (
             <CustomerDashboard
-              initialSubTab={activeTab === 'customer_bookings' ? 'bookings' : 'overview'}
+              initialSubTab="overview"
               onSelectService={(s) => {
                 setSelectedService(s);
                 setActiveTab('explore');
@@ -417,7 +275,12 @@ export default function App() {
             />
           )}
 
-          {/* CALLBOT LIVE SIMULATOR / INFO */}
+          {/* CONSUMER MESSAGES INBOX */}
+          {activeTab === 'messages' && (
+            <MessagesView onFindWorker={() => setActiveTab('explore')} />
+          )}
+
+          {/* CALLBOT LIVE SIMULATOR / INFO (INTERNAL / TELEPHONY DIAGNOSTICS) */}
           {activeTab === 'callbot_info' && (
             <CallBotSimulator preselectedJob={simulatorJob} />
           )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import MyBookingsView from './MyBookingsView';
 import { JOB_STATUS, PREFERRED_TIME_LABELS } from '../../../../packages/shared/statusVocabulary.js';
 import {
   Calendar,
@@ -432,135 +433,10 @@ export default function CustomerDashboard({
 
         {/* VIEW 2: ALL BOOKINGS */}
         {subTab === 'bookings' && (
-          <div>
-            <div style={{ marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '4px' }}>My Bookings</h1>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                Track active requests, completed services, and ratings.
-              </p>
-            </div>
-
-            {loading ? (
-              <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                Loading bookings...
-              </div>
-            ) : jobs.length === 0 ? (
-              <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                  You have not created any bookings yet.
-                </p>
-                <button className="btn btn-primary" onClick={() => onSelectService && onSelectService('')}>
-                  Find a Worker
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {jobs.map((job) => (
-                  <div key={job.job_id} className="card" style={{ padding: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h3 style={{ fontSize: '17px', fontWeight: 700 }}>{job.service_type}</h3>
-                          <span className={`status-pill status-${job.status}`}>
-                            {job.status.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                          Assigned to: <strong>{job.worker_name}</strong> • Requested on {new Date(job.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>
-                          ₹{job.estimated_cost}
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Day-based fee</div>
-                      </div>
-                    </div>
-
-                    <div style={{
-                      backgroundColor: 'var(--surface-alt)',
-                      padding: '12px',
-                      borderRadius: 'var(--radius-sm)',
-                      marginBottom: '14px',
-                      fontSize: '13px',
-                      color: 'var(--text-secondary)',
-                      lineHeight: 1.5
-                    }}>
-                      <div><strong>Address:</strong> {job.address}</div>
-                      <div><strong>Scheduled Date:</strong> {job.required_date} ({PREFERRED_TIME_LABELS[job.preferred_time] || 'Flexible'})</div>
-                      {job.description && (
-                        <div style={{ marginTop: '4px' }}><strong>Note:</strong> {job.description}</div>
-                      )}
-                    </div>
-
-                    {/* Action Bar based on Status */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                      {job.status === JOB_STATUS.REQUESTED && (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleStatusChange(job.job_id, JOB_STATUS.CANCELLED)}
-                        >
-                          Cancel Request
-                        </button>
-                      )}
-
-                      {job.status === JOB_STATUS.REJECTED && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleShowAlternatives(job)}
-                        >
-                          Find Alternative Worker
-                        </button>
-                      )}
-
-                      {job.status === JOB_STATUS.CUSTOMER_AND_WORKER_CONNECTED && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleStatusChange(job.job_id, JOB_STATUS.IN_PROGRESS)}
-                        >
-                          Mark Work Started
-                        </button>
-                      )}
-
-                      {job.status === JOB_STATUS.IN_PROGRESS && (
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleStatusChange(job.job_id, JOB_STATUS.COMPLETED)}
-                        >
-                          Mark Job Completed
-                        </button>
-                      )}
-
-                      {job.status === JOB_STATUS.COMPLETED && (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setActiveRatingJob(job);
-                            setRatingVal(5);
-                          }}
-                        >
-                          <Star size={13} style={{ color: '#F59E0B' }} />
-                          <span>Leave Review</span>
-                        </button>
-                      )}
-
-                      {onOpenCallbotForJob && (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => onOpenCallbotForJob(job)}
-                          title="Simulate CallBot dispatch call"
-                        >
-                          <PhoneCall size={13} />
-                          <span>CallBot Test</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MyBookingsView
+            onFindWorker={() => onSelectService && onSelectService('')}
+            onOpenCallbotForJob={onOpenCallbotForJob}
+          />
         )}
 
         {/* VIEW 3: PROFILE */}
