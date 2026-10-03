@@ -83,7 +83,7 @@ export default function PopularServicesGrid({
   onViewAll
 }) {
   return (
-    <section className="hl-popular-services-section">
+    <section id="popular-services-section" className="hl-popular-services-section">
       <div className="container">
         {/* Header Row: Title on Left, View All link on Right */}
         <div className="hl-services-header-row">

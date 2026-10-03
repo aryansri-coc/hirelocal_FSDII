@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { Bell, Check, Clock } from 'lucide-react';
@@ -6,6 +6,21 @@ import { Bell, Check, Clock } from 'lucide-react';
 export default function NotificationDropdown({ onSelectNotification }) {
   const { notifications, unreadNotifsCount, refreshNotifications } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -30,7 +45,7 @@ export default function NotificationDropdown({ onSelectNotification }) {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }} ref={dropdownRef}>
       <button
         type="button"
         className="btn btn-secondary btn-sm"

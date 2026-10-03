@@ -188,6 +188,11 @@ export default function App() {
         onOpenLogin={() => setAuthModalState('login')}
         onOpenSignup={() => setAuthModalState('signup')}
         onOpenWorkerOnboard={() => setShowWorkerOnboard(true)}
+        selectedCity={selectedCity}
+        onSelectCity={(city) => {
+          setSelectedCity(city);
+          fetchWorkers(selectedService);
+        }}
       />
 
       <main style={{ flex: 1, padding: (activeTab === 'landing' || activeTab === 'explore' || activeTab === 'customer_bookings') ? '0' : '32px 0 64px' }}>
@@ -226,6 +231,10 @@ export default function App() {
               onBack={() => setActiveTab('landing')}
               onSelectWorker={(w) => setSelectedWorkerDetail(w)}
               onBookWorker={(w) => handleBookWorker(w)}
+              onSelectService={(srv) => {
+                setSelectedService(srv);
+                fetchWorkers(srv);
+              }}
             />
           )}
 

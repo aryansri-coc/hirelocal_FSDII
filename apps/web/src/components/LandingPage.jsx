@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import WorkerCard from './WorkerCard';
-import DynamicWorkerShowcase from './DynamicWorkerShowcase';
+import FindWorkersView from './FindWorkersView';
 import LandingHeroSection from './LandingHeroSection';
 import PopularServicesGrid from './PopularServicesGrid';
 import HowItWorksSection from './HowItWorksSection';
@@ -135,7 +134,7 @@ export default function LandingPage({
   workers = [],
   services = []
 }) {
-  const [selectedService, setSelectedService] = useState('');
+  const [selectedService, setSelectedService] = useState('Plumber');
   const [locationQuery, setLocationQuery] = useState('All-India Hubs');
   const [selectedPincode, setSelectedPincode] = useState('110001');
   const [bookingDate, setBookingDate] = useState('Tomorrow');
@@ -235,21 +234,25 @@ export default function LandingPage({
   const handleHeroSearch = (query, location) => {
     if (location) setLocationQuery(location);
     if (query) setSelectedService(query);
+    const el = document.getElementById('find-workers-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
     if (onSearchSubmit) {
       onSearchSubmit(query, location, bookingDate);
     } else if (onSelectService && query) {
       onSelectService(query);
-    } else if (onFindWorker) {
-      onFindWorker();
     }
   };
 
   const handlePopularServicePick = (srvName) => {
     setSelectedService(srvName);
+    const el = document.getElementById('find-workers-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
     if (onSelectService) {
       onSelectService(srvName);
-    } else if (onFindWorker) {
-      onFindWorker();
     }
   };
 
@@ -262,29 +265,32 @@ export default function LandingPage({
         currentLocation={locationQuery || 'Govindpura, Bihar'}
       />
 
-      {/* 2. POPULAR SERVICES 8-CARD GRID (Mockup Image 1) */}
-      <PopularServicesGrid
-        onSelectService={handlePopularServicePick}
-        onViewAll={onFindWorker}
-      />
-
-      {/* 3. HOW IT WORKS (Section 8) */}
-      <HowItWorksSection />
-
-      {/* ==================================================
-          4. DYNAMIC WORKER SHOWCASE & HYPERLOCAL ARTISANS
-          ================================================== */}
-      <DynamicWorkerShowcase
+      {/* 2. FIND WORKERS / DIRECT JOB BOOKING SECTION (TRADE REEL + LIVE COLOR THEMED WORKER CARDS) */}
+      <FindWorkersView
+        isLandingPageSection={true}
         workers={workers}
+        selectedService={selectedService || 'Plumber'}
+        selectedLocation={locationQuery || 'Govindpura, Bihar (110001)'}
+        onBack={onFindWorker}
         onSelectWorker={onSelectWorker}
         onBookWorker={onBookWorker}
-        onFindWorker={onFindWorker}
-        onOpenCallbot={onOpenCallbot}
-        selectedPincode={selectedPincode}
+        onSelectService={(srv) => setSelectedService(srv)}
       />
 
-      {/* 5. CALLBOT / HIRELOCAL VOICE SECTION (Section 15) */}
+      {/* 3. CALLBOT / HIRELOCAL VOICE SECTION (Section 15 - Positioned directly below Worker Finding) */}
       <CallBotVoiceSection onOpenCallbot={onOpenCallbot || onFindWorker} />
+
+      {/* 4. POPULAR SERVICES 8-CARD GRID (Mockup Image 1) */}
+      <PopularServicesGrid
+        onSelectService={handlePopularServicePick}
+        onViewAll={() => {
+          const el = document.getElementById('find-workers-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
+      {/* 5. HOW IT WORKS (Section 8) */}
+      <HowItWorksSection />
 
       {/* 6. PRICING / TRANSPARENCY SECTION (Section 20) */}
       <PricingTransparencySection onFindWorker={onFindWorker} />

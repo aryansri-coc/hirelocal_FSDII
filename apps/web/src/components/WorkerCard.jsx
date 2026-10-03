@@ -5,18 +5,32 @@ import {
   CheckCircle,
   Calendar,
   Phone,
-  Smartphone
+  Smartphone,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function WorkerCard({
   worker,
   onSelectWorker,
   onBookWorker,
-  isRecommended = false
+  isRecommended = false,
+  themeColor
 }) {
   const isCallbot = worker.communication_type === 'non_smartphone';
   const dailyRate = Number(worker.daily_rate) || 550;
   const recommended = isRecommended || worker.isRecommended;
+
+  // Resolve profession theme color dynamically
+  const prof = (worker.profession || '').toLowerCase();
+  const activeColor = themeColor || (
+    prof.includes('elec') ? '#2563EB' :
+    prof.includes('plumb') ? '#0284C7' :
+    prof.includes('mech') || prof.includes('ac') ? '#DC2626' :
+    prof.includes('carp') ? '#D97706' :
+    prof.includes('paint') ? '#16A34A' :
+    prof.includes('appliance') ? '#7C3AED' :
+    '#0D9488'
+  );
 
   // Real worker avatar or high-quality contextual artisan photo
   const avatarUrl = worker.avatar || (
@@ -35,22 +49,54 @@ export default function WorkerCard({
       : 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80'
   );
 
-  const skills = worker.skills || ['House Wiring', 'MCB Installation', 'Fan Installation'];
+  const skills = worker.skills || ['Pipe Leaks', 'Sanitary Ware', 'Tap Fittings'];
 
   return (
-    <div className={`hl-worker-card ${recommended ? 'is-recommended' : ''}`}>
-      {/* Recommended Tag */}
-      {recommended && (
-        <div className="hl-recommended-pill">
-          <Star size={11} fill="#FFFFFF" color="#FFFFFF" />
-          <span>Recommended</span>
+    <div
+      className={`hl-worker-card ${recommended ? 'is-recommended' : ''}`}
+      style={{
+        borderColor: recommended ? activeColor : 'var(--border)',
+        boxShadow: recommended
+          ? `0 12px 30px -4px ${activeColor}22, 0 2px 8px -2px rgba(15, 23, 42, 0.04)`
+          : '0 4px 18px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02)'
+      }}
+    >
+      {/* 1. TOP UTILITY HEADER: Clean Trade Pill + Status Badge */}
+      <div className="hl-card-top-bar">
+        <div
+          className="hl-trade-pill"
+          style={{
+            backgroundColor: `${activeColor}12`,
+            color: activeColor,
+            borderColor: `${activeColor}30`
+          }}
+        >
+          <span className="hl-trade-pill-name">{worker.profession || 'Artisan'}</span>
         </div>
-      )}
+
+        {recommended ? (
+          <div
+            className="hl-recommended-badge"
+            style={{
+              backgroundColor: activeColor,
+              boxShadow: `0 2px 8px ${activeColor}45`
+            }}
+          >
+            <Star size={11} fill="#FFFFFF" color="#FFFFFF" />
+            <span>Recommended</span>
+          </div>
+        ) : (
+          <div className="hl-verified-pill">
+            <ShieldCheck size={12} color="#16A34A" />
+            <span>Verified Pro</span>
+          </div>
+        )}
+      </div>
 
       <div className="hl-card-inner">
-        {/* 1. Worker Identity + Photo + Subtle Verified (Sections 10, 11, 12) */}
-        <div className="hl-profile-header">
-          <div className="hl-avatar-wrap">
+        {/* 2. WORKER IDENTITY: Avatar Squircle + Clean Name */}
+        <div className="hl-identity-row">
+          <div className="hl-avatar-container">
             <img
               src={avatarUrl}
               alt={worker.name}
@@ -60,107 +106,117 @@ export default function WorkerCard({
                 e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80';
               }}
             />
+            <span className="hl-avatar-verified-mark" title="Verified Pro">
+              <CheckCircle size={14} fill="#16A34A" color="#FFFFFF" />
+            </span>
           </div>
 
-          <div className="hl-details-col">
-            <div className="hl-name-badge-row">
-              <h3 className="hl-worker-name" title={worker.name}>
-                {worker.name}
-              </h3>
-              <span className="hl-verified-subtle" title="Government Verified Worker">
-                <CheckCircle size={13} color="#16A34A" />
-                <span>Verified</span>
-              </span>
-            </div>
-
-            <div className="hl-profession-exp">
-              {worker.profession || 'Electrician'} · {worker.experience ? `${worker.experience} years experience` : 'Verified Artisan'}
-            </div>
-
-            {/* Rating, Jobs, Reliability & Distance */}
-            <div className="hl-metrics-row">
-              <span className="hl-rating-badge">
-                <Star size={12.5} fill="#F59E0B" color="#F59E0B" />
-                <strong>{worker.rating ? Number(worker.rating).toFixed(1) : '4.9'}</strong>
-                <span className="hl-jobs-count">({worker.completed_jobs || 142} jobs)</span>
-              </span>
-              <span className="hl-metric-sep">•</span>
-              <span className="hl-ontime-text">
-                {worker.reliability ? `${worker.reliability}% on-time` : '98% on-time'}
-              </span>
-            </div>
-
-            <div className="hl-distance-row">
-              <MapPin size={12} color="#6B7280" />
-              <span>{worker.distance_km || '2.4'} km away</span>
-            </div>
+          <div className="hl-identity-meta">
+            <h3 className="hl-worker-name" title={worker.name}>
+              {worker.name}
+            </h3>
           </div>
         </div>
 
-        {/* 2. Availability (Section 13) */}
-        <div className="hl-avail-row">
-          <span className="hl-avail-green-dot" />
-          <span>Available tomorrow</span>
+        {/* 3. CLEAN RATING & DISTANCE STRIP (No clutter, Rating + Jobs + Distance) */}
+        <div className="hl-rating-strip">
+          <div className="hl-rating-val">
+            <Star size={13} fill="#F59E0B" color="#F59E0B" />
+            <strong>{worker.rating ? Number(worker.rating).toFixed(1) : '4.9'}</strong>
+            <span className="hl-rating-count">({worker.completed_jobs || 134} jobs)</span>
+          </div>
+          <div className="hl-distance-tag">
+            <MapPin size={12} color="#64748B" />
+            <span>{worker.distance_km || '1.8'} km away</span>
+          </div>
         </div>
 
-        {/* 3. Services / Skill Chips */}
-        <div className="hl-skills-wrap">
+        {/* 4. SCULPTED AVAILABILITY CAPSULE */}
+        <div className="hl-availability-capsule">
+          <div className="hl-avail-left">
+            <span className="hl-pulse-dot" />
+            <span className="hl-avail-title">Available Tomorrow</span>
+          </div>
+          <span className="hl-avail-slot">Earliest Slot: 9:00 AM</span>
+        </div>
+
+        {/* 5. CURATED SKILL TAGS */}
+        <div className="hl-skills-island">
           {skills.slice(0, 3).map((s, idx) => (
-            <span key={idx} className="hl-skill-pill">
+            <span key={idx} className="hl-skill-chip">
               {s}
             </span>
           ))}
           {skills.length > 3 && (
-            <span className="hl-skill-pill hl-skill-more">
-              +{skills.length - 3}
+            <span className="hl-skill-chip hl-skill-chip-more">
+              +{skills.length - 3} more
             </span>
           )}
         </div>
 
-        {/* 4. Booking Method (Section 14) + Price */}
-        <div className="hl-method-price-row">
-          <div className="hl-booking-method-note">
+        {/* 6. SCULPTED PRICE & BOOKING ISLAND (Clean daily rate only, no ~₹69/hr) */}
+        <div className="hl-booking-price-island">
+          <div className="hl-bpi-left">
             {isCallbot ? (
-              <div className="hl-method-item phone">
-                <Phone size={14} className="hl-method-icon" />
+              <div className="hl-channel-block phone">
+                <div className="hl-channel-icon-wrap phone">
+                  <Phone size={13.5} />
+                </div>
                 <div>
-                  <div className="hl-method-title">Phone booking available</div>
-                  <div className="hl-method-desc">Hindi voice confirmation</div>
+                  <div className="hl-channel-title">Phone Booking</div>
+                  <div className="hl-channel-sub">Hindi Voice Bot • 30s</div>
                 </div>
               </div>
             ) : (
-              <div className="hl-method-item app">
-                <Smartphone size={14} className="hl-method-icon" />
+              <div className="hl-channel-block app">
+                <div className="hl-channel-icon-wrap app">
+                  <Smartphone size={13.5} />
+                </div>
                 <div>
-                  <div className="hl-method-title">App booking available</div>
-                  <div className="hl-method-desc">Instant confirmation</div>
+                  <div className="hl-channel-title">Instant Booking</div>
+                  <div className="hl-channel-sub">Direct App Confirm</div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="hl-price-display">
-            <span className="hl-price-amount">₹{dailyRate}</span>
-            <span className="hl-price-period">/day</span>
+          <div className="hl-bpi-right">
+            <div className="hl-bpi-rate">
+              <span className="hl-rate-num">₹{dailyRate}</span>
+              <span className="hl-rate-unit">/day</span>
+            </div>
           </div>
         </div>
 
-        {/* 5. Clean Action Buttons (Section 26) */}
-        <div className="hl-actions-row">
+        {/* 7. SCULPTED ACTION BUTTONS */}
+        <div className="hl-card-actions">
           <button
             type="button"
-            className="hl-btn-profile"
+            className="hl-btn-view-profile"
             onClick={() => onSelectWorker ? onSelectWorker(worker) : null}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = activeColor;
+              e.currentTarget.style.color = activeColor;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#E2E8F0';
+              e.currentTarget.style.color = '#334155';
+            }}
           >
             View Profile
           </button>
+
           <button
             type="button"
-            className="hl-btn-book"
+            className="hl-btn-book-pro"
+            style={{
+              backgroundColor: activeColor,
+              boxShadow: `0 4px 14px ${activeColor}40`
+            }}
             onClick={() => onBookWorker ? onBookWorker(worker) : null}
           >
-            <Calendar size={14} />
-            <span>Book</span>
+            <Calendar size={13.5} />
+            <span>Book Pro</span>
           </button>
         </div>
       </div>
