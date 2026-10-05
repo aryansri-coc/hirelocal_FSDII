@@ -3,20 +3,14 @@ import { api } from '../api/client';
 import {
   MapPin,
   Compass,
-  Radio,
-  Sparkles,
-  ShieldCheck,
   Zap,
   Wrench,
   Hammer,
   ChevronRight,
-  ExternalLink,
-  Layers,
   Image as ImageIcon,
-  CheckCircle2,
-  Navigation,
-  Loader2,
-  Building2
+  Building2,
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 
 // Pre-seeded coordinates for instant zero-latency loading of popular hubs
@@ -59,7 +53,7 @@ export default function PincodeGeographicMapCard({
   const [loading, setLoading] = useState(false);
   const [activeWorkerHover, setActiveWorkerHover] = useState(null);
 
-  // Normalize pincode string
+  // Clean 6-digit PINCODE
   const cleanPin = (pincode || '824101').toString().trim().slice(0, 6);
 
   useEffect(() => {
@@ -82,7 +76,6 @@ export default function PincodeGeographicMapCard({
           count: res.count || 0
         });
       } else {
-        // Fallback local dictionary
         const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['824101'];
         setGeoData((prev) => ({
           ...prev,
@@ -109,7 +102,7 @@ export default function PincodeGeographicMapCard({
     }
   };
 
-  const { lat, lng, locality, district, state, localities, count } = geoData;
+  const { lat, lng, locality, localities, count } = geoData;
 
   // OpenStreetMap embed URL with focused bounding box centered on exact coordinates
   const deltaLng = 0.038;
@@ -117,40 +110,46 @@ export default function PincodeGeographicMapCard({
   const bbox = `${(lng - deltaLng).toFixed(4)}%2C${(lat - deltaLat).toFixed(4)}%2C${(lng + deltaLng).toFixed(4)}%2C${(lat + deltaLat).toFixed(4)}`;
   const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
 
-  // Nearby Pro pins distributed geographically around center for visual coverage
-  const sampleWorkerPins = [
+  // Clean icon-only worker pins (no bulky text on the map as requested)
+  const workerPins = [
     {
       id: 'p1',
       name: 'Mukesh Sharma',
       trade: 'Electrician',
+      Icon: Zap,
+      color: '#EA580C',
+      bgColor: '#FFF7ED',
       rating: 4.9,
       distance: '1.4 km',
       rate: '₹550/d',
-      top: '32%',
-      left: '26%',
-      badge: '⚡ Electrician'
+      top: '34%',
+      left: '28%'
     },
     {
       id: 'p2',
       name: 'Ramesh Verma',
       trade: 'Plumber',
+      Icon: Wrench,
+      color: '#0284C7',
+      bgColor: '#F0F9FF',
       rating: 4.8,
       distance: '2.1 km',
       rate: '₹600/d',
-      top: '58%',
-      left: '68%',
-      badge: '🔧 Plumber'
+      top: '56%',
+      left: '68%'
     },
     {
       id: 'p3',
       name: 'Suresh Carpenter',
       trade: 'Carpenter',
+      Icon: Hammer,
+      color: '#D97706',
+      bgColor: '#FEF3C7',
       rating: 4.8,
       distance: '2.8 km',
       rate: '₹650/d',
       top: '64%',
-      left: '30%',
-      badge: '🪚 Carpenter'
+      left: '32%'
     }
   ];
 
@@ -161,119 +160,90 @@ export default function PincodeGeographicMapCard({
       height: '420px',
       borderRadius: '20px',
       overflow: 'hidden',
-      boxShadow: '0 20px 40px -12px rgba(15, 23, 42, 0.18), 0 0 0 1.5px rgba(234, 88, 12, 0.12)',
+      boxShadow: '0 20px 40px -12px rgba(15, 23, 42, 0.16), 0 0 0 1.5px rgba(234, 88, 12, 0.12)',
       border: '2.5px solid #FFFFFF',
       backgroundColor: '#0F172A',
       position: 'relative',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Top Header Floating Overlay */}
+      {/* Top Floating Control Bar: Just PINCODE + Single Toggle Button */}
       <div style={{
         position: 'absolute',
         top: '12px',
         left: '12px',
-        right: '12px',
         zIndex: 20,
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        pointerEvents: 'none'
+        gap: '6px',
+        pointerEvents: 'auto'
       }}>
-        {/* Live Radar Badge & PINCODE Pill */}
+        {/* Clean Pincode Badge */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '8px',
-          padding: '6px 12px',
+          gap: '6px',
+          padding: '5px 12px',
           borderRadius: '999px',
-          backgroundColor: 'rgba(15, 23, 42, 0.88)',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
           backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
           color: '#FFFFFF',
-          fontSize: '12px',
+          fontSize: '12.5px',
           fontWeight: 700,
-          pointerEvents: 'auto'
+          fontFamily: 'monospace'
         }}>
           <span style={{
-            width: '8px',
-            height: '8px',
+            width: '7px',
+            height: '7px',
             borderRadius: '50%',
             backgroundColor: '#22C55E',
-            boxShadow: '0 0 8px #22C55E',
+            boxShadow: '0 0 6px #22C55E',
             display: 'inline-block',
             animation: 'hl-blink 1.4s ease-in-out infinite'
           }} />
-          <span style={{ color: '#FDBA74', letterSpacing: '0.02em' }}>
-            PINCODE: {cleanPin}
-          </span>
-          <span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>•</span>
-          <span style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '11.5px' }}>
-            {locality || district || 'Local Hub'}
-          </span>
+          <MapPin size={13} style={{ color: '#EA580C' }} />
+          <span style={{ color: '#FFFFFF', letterSpacing: '0.04em' }}>{cleanPin}</span>
         </div>
 
-        {/* View Mode Switcher: Map vs Photo */}
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: '3px',
-          borderRadius: '999px',
-          backgroundColor: 'rgba(15, 23, 42, 0.88)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
-          pointerEvents: 'auto'
-        }}>
-          <button
-            type="button"
-            onClick={() => setViewMode('map')}
-            style={{
-              padding: '4px 9px',
-              borderRadius: '999px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: viewMode === 'map' ? 'var(--primary, #EA580C)' : 'transparent',
-              color: viewMode === 'map' ? '#FFFFFF' : '#94A3B8',
-              transition: 'all 0.15s ease'
-            }}
-            title="View Geographic Area Map"
-          >
-            <Compass size={12} />
-            <span>Map</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('photo')}
-            style={{
-              padding: '4px 9px',
-              borderRadius: '999px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: viewMode === 'photo' ? 'var(--primary, #EA580C)' : 'transparent',
-              color: viewMode === 'photo' ? '#FFFFFF' : '#94A3B8',
-              transition: 'all 0.15s ease'
-            }}
-            title="View Pro Photo"
-          >
-            <ImageIcon size={12} />
-            <span>Photo</span>
-          </button>
-        </div>
+        {/* Single Compact Toggle Button: Map ↔ Photo */}
+        <button
+          type="button"
+          onClick={() => setViewMode(viewMode === 'map' ? 'photo' : 'map')}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '999px',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+            color: '#E2E8F0',
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            transition: 'all 0.15s ease'
+          }}
+          title={viewMode === 'map' ? 'Switch to craftsman photo view' : 'Switch to geographic map view'}
+        >
+          {viewMode === 'map' ? (
+            <>
+              <ImageIcon size={12} style={{ color: '#FDBA74' }} />
+              <span>Photo</span>
+            </>
+          ) : (
+            <>
+              <Compass size={12} style={{ color: '#FDBA74' }} />
+              <span>Map</span>
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Map or Photo View */}
       {viewMode === 'map' ? (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
           {/* Real Interactive OpenStreetMap Iframe */}
@@ -285,13 +255,13 @@ export default function PincodeGeographicMapCard({
               width: '100%',
               height: '100%',
               border: 'none',
-              filter: 'contrast(1.05) saturate(1.1)',
+              filter: 'contrast(1.04) saturate(1.08)',
               pointerEvents: 'auto'
             }}
             loading="lazy"
           />
 
-          {/* Interactive Radar Overlay Rings (Centric on PINCODE) */}
+          {/* Minimal Central Radar Ring */}
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -300,213 +270,195 @@ export default function PincodeGeographicMapCard({
             pointerEvents: 'none',
             zIndex: 10
           }}>
-            {/* Concentric Pulsing Radar Circles */}
             <div style={{
-              width: '140px',
-              height: '140px',
+              width: '120px',
+              height: '120px',
               borderRadius: '50%',
-              border: '2px dashed rgba(234, 88, 12, 0.45)',
-              backgroundColor: 'rgba(234, 88, 12, 0.08)',
+              border: '1.5px dashed rgba(234, 88, 12, 0.45)',
+              backgroundColor: 'rgba(234, 88, 12, 0.06)',
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              animation: 'hl-pulse-ring 2.5s ease-out infinite'
+              animation: 'hl-pulse-ring 2.6s ease-out infinite'
             }} />
             <div style={{
-              width: '240px',
-              height: '240px',
+              width: '210px',
+              height: '210px',
               borderRadius: '50%',
-              border: '1px solid rgba(234, 88, 12, 0.25)',
+              border: '1px solid rgba(234, 88, 12, 0.2)',
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              animation: 'hl-pulse-ring 2.5s ease-out infinite 0.75s'
+              animation: 'hl-pulse-ring 2.6s ease-out infinite 0.8s'
             }} />
 
-            {/* Central PINCODE Marker Icon */}
+            {/* Sleek Central PIN Marker */}
             <div style={{
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              backgroundColor: '#EA580C',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.95), 0 4px 10px rgba(0, 0, 0, 0.3)',
               position: 'absolute',
               top: '50%',
               left: '50%',
-              transform: 'translate(-50%, -50%)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              pointerEvents: 'auto'
+              transform: 'translate(-50%, -50%)'
             }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--primary, #EA580C)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 0, 0, 0.35)',
-                transform: 'scale(1.1)'
-              }}>
-                <MapPin size={17} strokeWidth={2.6} />
-              </div>
-              <div style={{
-                marginTop: '4px',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                color: '#FFFFFF',
-                fontSize: '10.5px',
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                letterSpacing: '0.02em'
-              }}>
-                📍 {cleanPin} Hub
-              </div>
+              <MapPin size={14} strokeWidth={2.6} />
             </div>
           </div>
 
-          {/* Floating Verified Pro Pins in this PINCODE */}
-          {sampleWorkerPins.map((worker) => (
-            <div
-              key={worker.id}
-              onMouseEnter={() => setActiveWorkerHover(worker.id)}
-              onMouseLeave={() => setActiveWorkerHover(null)}
-              style={{
-                position: 'absolute',
-                top: worker.top,
-                left: worker.left,
-                zIndex: 15,
-                cursor: 'pointer',
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div style={{
-                padding: '3px 8px',
-                borderRadius: '999px',
-                backgroundColor: '#FFFFFF',
-                color: '#0F172A',
-                fontSize: '10.5px',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.22)',
-                border: '1.5px solid #EA580C',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease'
-              }}>
-                <span style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#22C55E'
-                }} />
-                <span>{worker.badge}</span>
-                <span style={{ color: '#EA580C', fontSize: '9.5px' }}>{worker.distance}</span>
-              </div>
-
-              {/* Tooltip on hover */}
-              {activeWorkerHover === worker.id && (
-                <div style={{
+          {/* Clean Icon-Only Worker Pins (No text clutter as requested) */}
+          {workerPins.map((worker) => {
+            const IconComp = worker.Icon;
+            return (
+              <div
+                key={worker.id}
+                onMouseEnter={() => setActiveWorkerHover(worker.id)}
+                onMouseLeave={() => setActiveWorkerHover(null)}
+                style={{
                   position: 'absolute',
-                  bottom: '120%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  backgroundColor: '#0F172A',
-                  color: '#FFFFFF',
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
-                  whiteSpace: 'nowrap',
-                  zIndex: 25,
-                  pointerEvents: 'none',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  top: worker.top,
+                  left: worker.left,
+                  zIndex: 15,
+                  cursor: 'pointer',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                {/* Sleek Circular Icon Pin with Status Beacon */}
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFFFFF',
+                  border: `2px solid ${worker.color}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(15, 23, 42, 0.25)',
+                  position: 'relative',
+                  transition: 'transform 0.15s ease',
+                  transform: activeWorkerHover === worker.id ? 'scale(1.15)' : 'scale(1)'
                 }}>
-                  <div style={{ fontWeight: 700 }}>{worker.name}</div>
-                  <div style={{ color: '#94A3B8', fontSize: '10px' }}>
-                    ★ {worker.rating} • {worker.rate} • Available
-                  </div>
+                  <IconComp size={16} strokeWidth={2.4} style={{ color: worker.color }} />
+                  {/* Tiny Online Status Dot */}
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#22C55E',
+                    border: '1.5px solid #FFFFFF'
+                  }} />
                 </div>
-              )}
-            </div>
-          ))}
 
-          {/* Bottom Glassmorphic Localities & Action Dock */}
+                {/* Subtle Hover Tooltip Only */}
+                {activeWorkerHover === worker.id && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '125%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#0F172A',
+                    color: '#FFFFFF',
+                    padding: '5px 9px',
+                    borderRadius: '7px',
+                    fontSize: '11px',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                    whiteSpace: 'nowrap',
+                    zIndex: 25,
+                    pointerEvents: 'none',
+                    border: '1px solid rgba(255,255,255,0.12)'
+                  }}>
+                    <span style={{ fontWeight: 700 }}>{worker.trade}</span>
+                    <span style={{ color: '#94A3B8', marginLeft: '5px', fontSize: '10px' }}>{worker.distance}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Sleek, Compact Floating Bottom Glass Bar */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
             left: '10px',
             right: '10px',
             zIndex: 20,
-            backgroundColor: 'rgba(255, 255, 255, 0.94)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '14px',
-            padding: '10px 12px',
-            boxShadow: '0 10px 25px rgba(15, 23, 42, 0.16)',
-            border: '1px solid rgba(226, 232, 240, 0.8)',
+            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            padding: '7px 10px',
+            boxShadow: '0 8px 20px rgba(15, 23, 42, 0.14)',
+            border: '1px solid rgba(226, 232, 240, 0.9)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '8px'
           }}>
-            {/* Top row: Postal API locality info */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#334155', fontWeight: 600 }}>
-                <Building2 size={13} style={{ color: '#EA580C', flexShrink: 0 }} />
-                <span>
-                  <strong>{count || localities.length || 2}</strong> official postal {count === 1 ? 'locality' : 'localities'} in {cleanPin} ({state || 'India'} Circle)
-                </span>
-              </div>
+            {/* Left: Compact Postal Localities */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              flex: 1,
+              minWidth: 0
+            }}>
               <span style={{
-                color: '#16A34A',
-                backgroundColor: '#DCFCE7',
-                padding: '2px 6px',
-                borderRadius: '4px',
+                fontSize: '11px',
                 fontWeight: 700,
-                fontSize: '10px'
-              }}>
-                ⚡ 5km Fast Radius
-              </span>
-            </div>
-
-            {/* Postal Localities Chips (retrieved from Postal API) */}
-            {localities && localities.length > 0 && (
-              <div style={{
-                display: 'flex',
+                color: '#334155',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
-                overflowX: 'auto',
-                paddingBottom: '2px',
-                scrollbarWidth: 'none'
+                gap: '3px',
+                flexShrink: 0
               }}>
-                {localities.slice(0, 5).map((loc, idx) => (
+                <Building2 size={13} style={{ color: '#EA580C' }} />
+                <span>{count || (localities?.length || 2)} Localities:</span>
+              </span>
+
+              {localities && localities.length > 0 ? (
+                localities.slice(0, 4).map((loc, idx) => (
                   <button
                     key={`${loc.name}-${idx}`}
                     type="button"
                     onClick={() => onSelectLocality && onSelectLocality(loc)}
                     style={{
-                      padding: '2px 8px',
-                      borderRadius: '6px',
+                      padding: '2px 7px',
+                      borderRadius: '5px',
                       backgroundColor: '#F1F5F9',
                       border: '1px solid #E2E8F0',
                       color: '#1E293B',
-                      fontSize: '10px',
+                      fontSize: '10.5px',
                       fontWeight: 600,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
+                      flexShrink: 0,
                       transition: 'all 0.15s ease'
                     }}
-                    title={`Postal address: ${loc.fullAddress || loc.name}`}
+                    title={`Click to focus: ${loc.fullAddress || loc.name}`}
                   >
                     📍 {loc.name}
                   </button>
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <span style={{ fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                  {locality || 'Aurangabad'} & surrounding hubs
+                </span>
+              )}
+            </div>
 
-            {/* CTA Button to browse workers in this PINCODE */}
+            {/* Right: Compact Clean CTA Button */}
             <button
               type="button"
               onClick={() => {
@@ -518,29 +470,29 @@ export default function PincodeGeographicMapCard({
                 }
               }}
               style={{
-                width: '100%',
-                padding: '7px 12px',
+                padding: '6px 12px',
                 borderRadius: '8px',
-                backgroundColor: 'var(--primary, #EA580C)',
+                backgroundColor: '#EA580C',
                 color: '#FFFFFF',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: 700,
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.15s ease'
+                gap: '4px',
+                flexShrink: 0,
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap'
               }}
             >
-              <span>Explore Verified Workers in PINCODE {cleanPin}</span>
-              <ChevronRight size={14} />
+              <span>Explore Pros</span>
+              <ChevronRight size={13} />
             </button>
           </div>
         </div>
       ) : (
-        /* Photo Mode (Hero craftsman photo) */
+        /* Photo Mode */
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
           <img
             src="/electrician_hero.jpg"
@@ -556,37 +508,32 @@ export default function PincodeGeographicMapCard({
               display: 'block'
             }}
           />
-          {/* Floating Badge on Photo */}
+          {/* Subtle Bottom Floating Pill in Photo Mode */}
           <div style={{
             position: 'absolute',
-            bottom: '16px',
-            left: '16px',
-            right: '16px',
+            bottom: '12px',
+            left: '12px',
+            right: '12px',
             backgroundColor: 'rgba(15, 23, 42, 0.88)',
             backdropFilter: 'blur(8px)',
-            borderRadius: '12px',
-            padding: '10px 14px',
+            borderRadius: '10px',
+            padding: '8px 12px',
             color: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldCheck size={15} style={{ color: '#22C55E' }} />
-                <span>Verified Pro in {cleanPin}</span>
-              </div>
-              <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-                Available tomorrow for instant dispatch
-              </div>
+            <div style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <ShieldCheck size={14} style={{ color: '#22C55E' }} />
+              <span>Verified Pros available in {cleanPin}</span>
             </div>
             <button
               type="button"
               onClick={() => setViewMode('map')}
               style={{
-                padding: '6px 10px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--primary, #EA580C)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                backgroundColor: '#EA580C',
                 color: '#FFFFFF',
                 border: 'none',
                 cursor: 'pointer',
@@ -598,7 +545,7 @@ export default function PincodeGeographicMapCard({
               }}
             >
               <span>View Map</span>
-              <Compass size={12} />
+              <Compass size={11} />
             </button>
           </div>
         </div>
