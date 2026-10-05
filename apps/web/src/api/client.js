@@ -143,6 +143,8 @@ export const api = {
     apiRequest(`/pincode/details/${encodeURIComponent(pincode)}`),
   getPincodeGeo: (pincode) =>
     apiRequest(`/pincode/geo/${encodeURIComponent(pincode)}`),
+  reverseGeocode: (lat, lng) =>
+    apiRequest(`/pincode/reverse?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`),
   getPopularPincodes: () =>
     apiRequest('/pincode/popular')
 };

@@ -23,7 +23,9 @@ import {
   Filter,
   Check,
   SlidersHorizontal,
-  X
+  X,
+  Navigation,
+  Loader2
 } from 'lucide-react';
 
 // =========================================================
@@ -682,11 +684,51 @@ export default function FindWorkersView({
   const [selectedLocState, setSelectedLocState] = useState(selectedLocation);
   const [isLocSwitcherOpen, setIsLocSwitcherOpen] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   const scrollBoxRef = useRef(null);
   const cardRefs = useRef({});
   const filterPopoverRef = useRef(null);
   const locSwitcherRef = useRef(null);
+
+  const handleGpsDetect = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await api.reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          if (res && res.success && res.pincode) {
+            const newLoc = {
+              pincode: res.pincode,
+              locality: res.locality || res.pincode,
+              district: res.district || '',
+              state: res.state || '',
+              label: `${res.locality || res.pincode} (${res.pincode})`
+            };
+            setSelectedLocState(newLoc);
+            if (onSelectLocation) onSelectLocation(newLoc);
+          }
+        } catch (err) {
+          console.error('GPS detect error:', err);
+        } finally {
+          setGpsLoading(false);
+        }
+      },
+      (err) => {
+        setGpsLoading(false);
+        if (err.code === 1) {
+          alert('Location permission was denied. Please allow location access in your browser or select PINCODE manually.');
+        } else {
+          alert('GPS location unavailable. Please enter a 6-digit PINCODE.');
+        }
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     if (selectedLocation) {
@@ -1093,59 +1135,89 @@ export default function FindWorkersView({
                 </div>
               </div>
 
-              {/* Service Area PINCODE Switcher Pill */}
-              <div style={{ position: 'relative' }} ref={locSwitcherRef}>
+              {/* Service Area PINCODE Switcher Pill & 1-Click GPS Detect */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ position: 'relative' }} ref={locSwitcherRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsLocSwitcherOpen(!isLocSwitcherOpen)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#FFF7ED',
+                      border: '1.5px solid #FDBA74',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#EA580C',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Click to search workers in a different PINCODE area"
+                  >
+                    <MapPin size={13} style={{ color: '#EA580C' }} />
+                    <span>PINCODE: <strong>{locPincode}</strong> ({locName})</span>
+                    <ChevronDown
+                      size={12}
+                      style={{
+                        transform: isLocSwitcherOpen ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.15s ease'
+                      }}
+                    />
+                  </button>
+
+                  {isLocSwitcherOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '115%',
+                      right: 0,
+                      zIndex: 150,
+                      minWidth: '340px'
+                    }}>
+                      <PincodeAddressSelector
+                        selectedPincode={locPincode}
+                        selectedAddress={selectedLocState}
+                        onSelect={(addr) => {
+                          handleSelectLoc(addr);
+                          setIsLocSwitcherOpen(false);
+                        }}
+                        onClose={() => setIsLocSwitcherOpen(false)}
+                        variant="popover"
+                        title="Switch Service PINCODE"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setIsLocSwitcherOpen(!isLocSwitcherOpen)}
+                  onClick={handleGpsDetect}
+                  disabled={gpsLoading}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
+                    gap: '4px',
+                    padding: '6px 10px',
                     borderRadius: '8px',
-                    backgroundColor: '#FFF7ED',
-                    border: '1.5px solid #FDBA74',
+                    backgroundColor: '#EFF6FF',
+                    border: '1.5px solid #BFDBFE',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#EA580C',
+                    color: '#1D4ED8',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
-                  title="Click to search workers in a different PINCODE area"
+                  title="Ask for GPS permission to detect your current location"
                 >
-                  <MapPin size={13} style={{ color: '#EA580C' }} />
-                  <span>PINCODE: <strong>{locPincode}</strong> ({locName})</span>
-                  <ChevronDown
-                    size={12}
-                    style={{
-                      transform: isLocSwitcherOpen ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.15s ease'
-                    }}
-                  />
+                  {gpsLoading ? (
+                    <Loader2 size={13} className="hl-spin" />
+                  ) : (
+                    <Navigation size={13} style={{ color: '#2563EB' }} />
+                  )}
+                  <span>GPS</span>
                 </button>
-
-                {isLocSwitcherOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '115%',
-                    right: 0,
-                    zIndex: 150,
-                    minWidth: '340px'
-                  }}>
-                    <PincodeAddressSelector
-                      selectedPincode={locPincode}
-                      selectedAddress={selectedLocState}
-                      onSelect={(addr) => {
-                        handleSelectLoc(addr);
-                        setIsLocSwitcherOpen(false);
-                      }}
-                      onClose={() => setIsLocSwitcherOpen(false)}
-                      variant="popover"
-                      title="Switch Service PINCODE"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Sort By Dropdown */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PincodeAddressSelector from './PincodeAddressSelector';
 import PincodeGeographicMapCard from './PincodeGeographicMapCard';
+import { api } from '../api/client';
 import {
   Search,
   MapPin,
@@ -10,7 +11,9 @@ import {
   Phone,
   Users,
   Handshake,
-  Check
+  Check,
+  Navigation,
+  Loader2
 } from 'lucide-react';
 
 export default function LandingHeroSection({
@@ -30,6 +33,67 @@ export default function LandingHeroSection({
       : (typeof currentLocation === 'string' ? currentLocation : 'MP Nagar (462011)')
   );
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsMessage, setGpsMessage] = useState('');
+
+  const handleRequestGpsLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsMessage('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setGpsLoading(true);
+    setGpsMessage('Asking for GPS permission...');
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setGpsMessage('Finding your doorstep PINCODE & local area...');
+
+        try {
+          const res = await api.reverseGeocode(lat, lng);
+          if (res && res.success && res.pincode) {
+            setPincodeInput(res.pincode);
+            const label = `${res.locality || res.district || 'Current Location'} (${res.pincode})`;
+            setSelectedLoc(label);
+            setGpsMessage(`🎯 GPS Location detected: ${res.locality || ''} (${res.pincode})`);
+
+            if (onSelectLocation) {
+              onSelectLocation({
+                pincode: res.pincode,
+                locality: res.locality || res.district || 'Current Location',
+                district: res.district || '',
+                state: res.state || '',
+                label
+              });
+            }
+
+            // Auto-clear message after 5s
+            setTimeout(() => setGpsMessage(''), 5000);
+          } else {
+            setGpsMessage('Could not find Indian PINCODE for this coordinate.');
+          }
+        } catch (err) {
+          console.error('GPS reverse error:', err);
+          setGpsMessage('Failed to reverse geocode GPS location.');
+        } finally {
+          setGpsLoading(false);
+        }
+      },
+      (err) => {
+        setGpsLoading(false);
+        if (err.code === 1) {
+          setGpsMessage('Location permission denied. Please allow GPS access in your browser or type PINCODE.');
+        } else if (err.code === 2) {
+          setGpsMessage('GPS location unavailable. Please enter a 6-digit PINCODE.');
+        } else {
+          setGpsMessage('GPS request timed out. Please try again.');
+        }
+      },
+      { timeout: 12000, enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     if (currentLocation) {
@@ -141,6 +205,32 @@ export default function LandingHeroSection({
                       fontFamily: 'monospace'
                     }}
                   />
+                  {/* Quick GPS Permission & Detect Icon Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRequestGpsLocation();
+                    }}
+                    title="Ask for GPS permission to detect current location"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '2px 4px',
+                      cursor: 'pointer',
+                      color: gpsLoading ? '#EA580C' : '#2563EB',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    {gpsLoading ? (
+                      <Loader2 size={13} className="hl-spin" />
+                    ) : (
+                      <Navigation size={13} />
+                    )}
+                  </button>
                   <ChevronDown
                     size={14}
                     style={{
@@ -182,6 +272,27 @@ export default function LandingHeroSection({
               </button>
             </form>
 
+            {/* GPS Feedback Alert Banner */}
+            {gpsMessage && (
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                backgroundColor: gpsMessage.includes('denied') || gpsMessage.includes('Failed') ? '#FEF2F2' : '#F0FDF4',
+                border: `1px solid ${gpsMessage.includes('denied') || gpsMessage.includes('Failed') ? '#FECACA' : '#BBF7D0'}`,
+                color: gpsMessage.includes('denied') || gpsMessage.includes('Failed') ? '#B91C1C' : '#15803D',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginTop: '-12px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <Navigation size={13} />
+                <span>{gpsMessage}</span>
+              </div>
+            )}
+
             {/* Quick PINCODE Shortcuts for instant testing (824101, 143410, etc.) */}
             <div style={{
               display: 'flex',
@@ -189,12 +300,45 @@ export default function LandingHeroSection({
               gap: '6px',
               fontSize: '12px',
               color: 'var(--text-muted)',
-              marginTop: '-10px',
+              marginTop: gpsMessage ? '0' : '-10px',
               marginBottom: '22px',
               flexWrap: 'wrap'
             }}>
+              {/* GPS Auto-Detect Button */}
+              <button
+                type="button"
+                onClick={handleRequestGpsLocation}
+                disabled={gpsLoading}
+                style={{
+                  padding: '3px 9px',
+                  borderRadius: '999px',
+                  backgroundColor: '#EFF6FF',
+                  color: '#1D4ED8',
+                  border: '1.5px solid #BFDBFE',
+                  cursor: 'pointer',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Ask for GPS permission to detect your current location"
+              >
+                {gpsLoading ? (
+                  <>
+                    <Loader2 size={11} className="hl-spin" />
+                    <span>Detecting GPS...</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation size={11} style={{ color: '#2563EB' }} />
+                    <span>🎯 Use GPS</span>
+                  </>
+                )}
+              </button>
               <span style={{ fontWeight: 700, color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                <MapPin size={12} /> Search PINCODE:
+                <MapPin size={12} /> PINCODE:
               </span>
               {[
                 { pin: '824101', name: 'Bihar (824101)' },

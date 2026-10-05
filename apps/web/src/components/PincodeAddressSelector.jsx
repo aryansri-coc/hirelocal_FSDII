@@ -26,7 +26,63 @@ export default function PincodeAddressSelector({
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState('');
   const inputRef = useRef(null);
+
+  const handleDetectGps = () => {
+    if (!navigator.geolocation) {
+      setGpsStatus('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setGpsLoading(true);
+    setGpsStatus('Requesting GPS permission from browser...');
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setGpsStatus('Finding your PINCODE & postal addresses...');
+
+        try {
+          const res = await api.reverseGeocode(lat, lng);
+          if (res && res.success && res.pincode) {
+            setSearchInput(res.pincode);
+            setActivePincode(res.pincode);
+            setGpsStatus(`GPS detected: ${res.locality || res.district || 'Location'} (${res.pincode})`);
+
+            if (res.addresses && res.addresses.length > 0) {
+              setAddresses(res.addresses);
+              if (onSelect) {
+                onSelect(res.addresses[0]);
+              }
+            } else {
+              loadAddressesForPincode(res.pincode);
+            }
+          } else {
+            setGpsStatus('Could not resolve Indian PINCODE for this coordinate.');
+          }
+        } catch (err) {
+          console.error('Reverse geocode error:', err);
+          setGpsStatus('Failed to find address for GPS location.');
+        } finally {
+          setGpsLoading(false);
+        }
+      },
+      (err) => {
+        setGpsLoading(false);
+        if (err.code === 1) {
+          setGpsStatus('Location permission denied. Please allow location access in your browser or type PINCODE.');
+        } else if (err.code === 2) {
+          setGpsStatus('GPS location unavailable. Please enter a 6-digit PINCODE.');
+        } else {
+          setGpsStatus('GPS request timed out. Please try again or enter PINCODE.');
+        }
+      },
+      { timeout: 12000, enableHighAccuracy: true }
+    );
+  };
 
   // Auto focus input on mount if popover or modal
   useEffect(() => {
@@ -236,6 +292,56 @@ export default function PincodeAddressSelector({
             </button>
           )}
         </div>
+      </div>
+
+      {/* GPS Location Auto-Detection Button */}
+      <div style={{ padding: '0 16px 8px' }}>
+        <button
+          type="button"
+          onClick={handleDetectGps}
+          disabled={gpsLoading}
+          style={{
+            width: '100%',
+            padding: '7px 12px',
+            borderRadius: '9px',
+            backgroundColor: gpsStatus && !gpsLoading && !gpsStatus.includes('denied') && !gpsStatus.includes('Failed') ? '#F0FDF4' : '#EFF6FF',
+            border: `1.5px solid ${gpsStatus && !gpsLoading && !gpsStatus.includes('denied') && !gpsStatus.includes('Failed') ? '#86EFAC' : '#BFDBFE'}`,
+            color: gpsStatus && !gpsLoading && !gpsStatus.includes('denied') && !gpsStatus.includes('Failed') ? '#166534' : '#1D4ED8',
+            fontSize: '11.5px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.15s ease'
+          }}
+          title="Ask for GPS permission to detect your current location"
+        >
+          {gpsLoading ? (
+            <>
+              <Loader2 size={13} className="hl-spin" />
+              <span>{gpsStatus || 'Requesting GPS permission...'}</span>
+            </>
+          ) : (
+            <>
+              <Navigation size={13} style={{ color: '#2563EB' }} />
+              <span>Use Current GPS Location</span>
+            </>
+          )}
+        </button>
+
+        {gpsStatus && !gpsLoading && (
+          <div style={{
+            fontSize: '10.5px',
+            marginTop: '4px',
+            textAlign: 'center',
+            fontWeight: 600,
+            color: gpsStatus.includes('denied') || gpsStatus.includes('Failed') || gpsStatus.includes('not supported') ? '#DC2626' : '#16A34A'
+          }}>
+            {gpsStatus}
+          </div>
+        )}
       </div>
 
       {/* Popular Pincode Quick Chips */}

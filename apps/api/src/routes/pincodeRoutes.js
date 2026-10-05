@@ -535,5 +535,123 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
+/**
+ * Haversine distance in km between two lat/lng pairs
+ */
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * GET /api/pincode/reverse
+ * Reverse-geocodes GPS coordinates (lat, lng) to 6-digit Indian PINCODE & official postal addresses
+ */
+router.get('/reverse', async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Valid numeric lat and lng query parameters required'
+    });
+  }
+
+  // 1. Check if GPS is within 7 km of any pre-seeded hub
+  let closestHub = null;
+  let minDistance = Infinity;
+
+  for (const hub of PAN_INDIA_POPULAR_HUBS) {
+    if (hub.lat && hub.lng) {
+      const dist = getDistanceFromLatLonInKm(lat, lng, hub.lat, hub.lng);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestHub = hub;
+      }
+    }
+  }
+
+  if (closestHub && minDistance <= 7.0) {
+    const addresses = await fetchAllAddressesForPincode(closestHub.pincode);
+    return res.json({
+      success: true,
+      source: 'hub_proximity',
+      distanceKm: minDistance.toFixed(2),
+      pincode: closestHub.pincode,
+      locality: closestHub.locality || closestHub.name,
+      district: closestHub.district,
+      state: closestHub.state,
+      label: `${closestHub.locality || closestHub.name} (${closestHub.pincode})`,
+      coordinates: { lat, lng },
+      addresses: addresses.slice(0, 10),
+      count: addresses.length
+    });
+  }
+
+  // 2. Call Nominatim Reverse Geocoding with 3.5s timeout
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+
+    const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+      headers: { 'User-Agent': 'HireLocal-GPS-Reverse/1.0' },
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (nomRes.ok) {
+      const nomData = await nomRes.json();
+      const addr = nomData?.address || {};
+
+      let pin = (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
+      const locality = addr.suburb || addr.residential || addr.neighbourhood || addr.city_district || addr.town || addr.city || addr.village || 'My Location';
+      const district = addr.state_district || addr.county || addr.city || '';
+      const state = addr.state || '';
+
+      if (pin && pin.length === 6) {
+        const addresses = await fetchAllAddressesForPincode(pin);
+        return res.json({
+          success: true,
+          source: 'nominatim_gps',
+          pincode: pin,
+          locality,
+          district,
+          state,
+          label: `${locality} (${pin})`,
+          coordinates: { lat, lng },
+          addresses: addresses.slice(0, 10),
+          count: addresses.length
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Nominatim reverse geocode error:', err.message);
+  }
+
+  // 3. Fallback to closest hub in India
+  const fallback = closestHub || PAN_INDIA_POPULAR_HUBS[0];
+  const addresses = await fetchAllAddressesForPincode(fallback.pincode);
+  res.json({
+    success: true,
+    source: 'nearest_hub_fallback',
+    pincode: fallback.pincode,
+    locality: fallback.locality || fallback.name,
+    district: fallback.district,
+    state: fallback.state,
+    label: `${fallback.locality || fallback.name} (${fallback.pincode})`,
+    coordinates: { lat, lng },
+    addresses: addresses.slice(0, 10),
+    count: addresses.length
+  });
+});
+
 export default router;
 
