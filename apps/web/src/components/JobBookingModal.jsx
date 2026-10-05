@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import PincodeAddressSelector from './PincodeAddressSelector';
 import {
   Calendar,
   MapPin,
@@ -10,10 +11,11 @@ import {
   Smartphone,
   X,
   PhoneCall,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 
-export default function JobBookingModal({ worker, defaultService, onClose, onJobCreated }) {
+export default function JobBookingModal({ worker, defaultService, onClose, onJobCreated, selectedLocation }) {
   const { user, showToast } = useAuth();
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -29,8 +31,9 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
   const [requiredDate, setRequiredDate] = useState(tomorrowStr);
   const [duration, setDuration] = useState('1 Day');
   const [address, setAddress] = useState(
-    user?.address || 'Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal'
+    user?.address || (selectedLocation?.pincode ? `MP Nagar Zone 2, Bhopal - ${selectedLocation.pincode}` : 'Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal (462011)')
   );
+  const [pincodeLookupOpen, setPincodeLookupOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -352,9 +355,47 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
 
               {/* Address */}
               <div>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
-                  Service Address
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                    Service Address
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setPincodeLookupOpen(!pincodeLookupOpen)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--primary, #EA580C)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: 0
+                    }}
+                  >
+                    <Sparkles size={12} />
+                    {pincodeLookupOpen ? 'Hide PINCODE Lookup' : 'Select by PINCODE API'}
+                  </button>
+                </div>
+
+                {pincodeLookupOpen && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <PincodeAddressSelector
+                      selectedPincode={selectedLocation?.pincode || '462011'}
+                      onSelect={(addr) => {
+                        const baseAddr = addr.fullAddress || `${addr.name}, ${addr.district}, ${addr.state} - ${addr.pincode}`;
+                        setAddress(baseAddr);
+                        setPincodeLookupOpen(false);
+                      }}
+                      onClose={() => setPincodeLookupOpen(false)}
+                      variant="inline"
+                      title="Select Official Postal Address"
+                    />
+                  </div>
+                )}
+
                 <div style={{ position: 'relative' }}>
                   <MapPin size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                   <input
@@ -363,8 +404,11 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                     onChange={(e) => setAddress(e.target.value)}
                     className="form-input"
                     style={{ paddingLeft: '36px', fontSize: '13.5px' }}
-                    placeholder="House / Flat, Street, Locality"
+                    placeholder="House / Flat, Street, Locality with PINCODE"
                   />
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Use the PINCODE API button above to auto-fill official locality and district.
                 </div>
               </div>
 

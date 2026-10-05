@@ -14,7 +14,7 @@ export default function DynamicWorkerShowcase({
       <FindWorkersView
         workers={workers}
         selectedService="Electrician"
-        selectedLocation={`Govindpura, Bihar (${selectedPincode})`}
+        selectedLocation={{ pincode: selectedPincode, locality: 'MP Nagar', district: 'Bhopal', label: `MP Nagar (${selectedPincode})` }}
         onBack={onFindWorker}
         onSelectWorker={onSelectWorker}
         onBookWorker={onBookWorker}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
-import { User, Phone, MapPin, Mail, CheckCircle } from 'lucide-react';
+import PincodeAddressSelector from './PincodeAddressSelector';
+import { User, Phone, MapPin, Mail, CheckCircle, Sparkles } from 'lucide-react';
 
 export default function CustomerProfile({ onBecomeWorker }) {
   const { user, showToast, refreshUser } = useAuth();
@@ -9,6 +10,7 @@ export default function CustomerProfile({ onBecomeWorker }) {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [address, setAddress] = useState(user?.address || '');
+  const [showPincodeSelector, setShowPincodeSelector] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async (e) => {
@@ -75,13 +77,51 @@ export default function CustomerProfile({ onBecomeWorker }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Default Service Address</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Default Service Address</label>
+              <button
+                type="button"
+                onClick={() => setShowPincodeSelector(!showPincodeSelector)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary, #EA580C)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: 0
+                }}
+              >
+                <Sparkles size={12} />
+                {showPincodeSelector ? 'Hide PINCODE Finder' : 'Select by PINCODE API'}
+              </button>
+            </div>
+
+            {showPincodeSelector && (
+              <div style={{ marginBottom: '12px' }}>
+                <PincodeAddressSelector
+                  selectedPincode="462011"
+                  onSelect={(addr) => {
+                    const full = addr.fullAddress || `${addr.name}, ${addr.district}, ${addr.state} - ${addr.pincode}`;
+                    setAddress(full);
+                    setShowPincodeSelector(false);
+                  }}
+                  onClose={() => setShowPincodeSelector(false)}
+                  variant="inline"
+                  title="Select Default Address by PINCODE"
+                />
+              </div>
+            )}
+
             <textarea
               className="form-textarea"
               rows={3}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="House/flat number, apartment name, street, locality"
+              placeholder="House/flat number, apartment name, street, locality with PINCODE"
             />
           </div>
 

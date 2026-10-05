@@ -132,11 +132,18 @@ export default function LandingPage({
   onBookWorker,
   onOpenCallbot,
   workers = [],
-  services = []
+  services = [],
+  selectedLocation,
+  onSelectLocation
 }) {
   const [selectedService, setSelectedService] = useState('Plumber');
-  const [locationQuery, setLocationQuery] = useState('All-India Hubs');
-  const [selectedPincode, setSelectedPincode] = useState('110001');
+  const [selectedLocationObj, setSelectedLocationObj] = useState(
+    selectedLocation || { pincode: '462011', locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh', label: 'MP Nagar, Bhopal (462011)' }
+  );
+  const [locationQuery, setLocationQuery] = useState(
+    selectedLocation?.label || 'MP Nagar, Bhopal (462011)'
+  );
+  const [selectedPincode, setSelectedPincode] = useState(selectedLocation?.pincode || '462011');
   const [bookingDate, setBookingDate] = useState('Tomorrow');
   const [openDropdown, setOpenDropdown] = useState(null); // 'service' | 'location' | 'date' | null
   const [locationSearchInput, setLocationSearchInput] = useState('');
@@ -261,8 +268,14 @@ export default function LandingPage({
       {/* 1. HERO SECTION (Mockup Image 1) */}
       <LandingHeroSection
         onSearch={handleHeroSearch}
-        onSelectLocation={(loc) => setLocationQuery(loc)}
-        currentLocation={locationQuery || 'Govindpura, Bihar'}
+        onSelectLocation={(loc) => {
+          const label = typeof loc === 'object' ? `${loc.locality || loc.name} (${loc.pincode})` : loc;
+          setLocationQuery(label);
+          setSelectedLocationObj(loc);
+          if (loc.pincode) setSelectedPincode(loc.pincode);
+          if (onSelectLocation) onSelectLocation(loc);
+        }}
+        currentLocation={selectedLocationObj || locationQuery}
       />
 
       {/* 2. FIND WORKERS / DIRECT JOB BOOKING SECTION (TRADE REEL + LIVE COLOR THEMED WORKER CARDS) */}
@@ -270,7 +283,14 @@ export default function LandingPage({
         isLandingPageSection={true}
         workers={workers}
         selectedService={selectedService || 'Plumber'}
-        selectedLocation={locationQuery || 'Govindpura, Bihar (110001)'}
+        selectedLocation={selectedLocationObj || locationQuery}
+        onSelectLocation={(loc) => {
+          const label = typeof loc === 'object' ? `${loc.locality || loc.name} (${loc.pincode})` : loc;
+          setLocationQuery(label);
+          setSelectedLocationObj(loc);
+          if (loc.pincode) setSelectedPincode(loc.pincode);
+          if (onSelectLocation) onSelectLocation(loc);
+        }}
         onBack={onFindWorker}
         onSelectWorker={onSelectWorker}
         onBookWorker={onBookWorker}

@@ -501,7 +501,7 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                   Service Perimeter
                 </h4>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
-                  Based in <strong>{worker.location?.name || worker.location_name || 'Govindpura, Bihar'}</strong>, operating within a <strong>15 km radius</strong> to guarantee prompt morning arrival.
+                  Based in <strong>{worker.location?.name || worker.location_name || (worker.pincode ? `PINCODE ${worker.pincode}` : 'MP Nagar (462011)')}</strong>, operating within a <strong>15 km radius</strong> to guarantee prompt morning arrival.
                 </p>
               </div>
             </div>

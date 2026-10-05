@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import WorkerCard from './WorkerCard';
+import PincodeAddressSelector from './PincodeAddressSelector';
 import {
   ArrowLeft,
   Search,
@@ -657,7 +658,8 @@ export default function FindWorkersView({
   onSelectWorker,
   onBookWorker,
   onSelectService,
-  selectedLocation = 'Govindpura, Bihar',
+  selectedLocation = { pincode: '462011', locality: 'MP Nagar', district: 'Bhopal', label: 'MP Nagar (462011)' },
+  onSelectLocation,
   isLandingPageSection = false
 }) {
   const initialTradeId = useMemo(() => {
@@ -676,18 +678,45 @@ export default function FindWorkersView({
   const [searchInput, setSearchInput] = useState('');
   const [sortBy, setSortBy] = useState('Recommended');
   const [activeQuickFilter, setActiveQuickFilter] = useState('all');
-  const [currentCity, setCurrentCity] = useState(selectedLocation || 'Govindpura, Bihar');
+  const [selectedLocState, setSelectedLocState] = useState(selectedLocation);
+  const [isLocSwitcherOpen, setIsLocSwitcherOpen] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
   const scrollBoxRef = useRef(null);
   const cardRefs = useRef({});
   const filterPopoverRef = useRef(null);
+  const locSwitcherRef = useRef(null);
 
-  // Close filter popover on outside click
+  useEffect(() => {
+    if (selectedLocation) {
+      setSelectedLocState(selectedLocation);
+    }
+  }, [selectedLocation]);
+
+  const locPincode = typeof selectedLocState === 'object' && selectedLocState?.pincode
+    ? selectedLocState.pincode
+    : (typeof selectedLocState === 'string' ? selectedLocState.match(/\d{6}/)?.[0] || '462011' : '462011');
+
+  const locName = typeof selectedLocState === 'object'
+    ? (selectedLocState.locality || selectedLocState.name || selectedLocState.district || 'MP Nagar')
+    : (typeof selectedLocState === 'string' ? selectedLocState.split('(')[0]?.trim() || 'MP Nagar' : 'MP Nagar');
+
+  const handleSelectLoc = (addr) => {
+    setSelectedLocState(addr);
+    setIsLocSwitcherOpen(false);
+    if (onSelectLocation) {
+      onSelectLocation(addr);
+    }
+  };
+
+  // Close popovers on outside click
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (filterPopoverRef.current && !filterPopoverRef.current.contains(e.target)) {
         setIsFilterPopoverOpen(false);
+      }
+      if (locSwitcherRef.current && !locSwitcherRef.current.contains(e.target)) {
+        setIsLocSwitcherOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -755,7 +784,15 @@ export default function FindWorkersView({
   // Combine static catalog for this trade with any dynamically fetched workers
   const currentTradeWorkers = useMemo(() => {
     const baseList = TRADE_WORKERS_CATALOG[activeTradeId] || TRADE_WORKERS_CATALOG.electrician;
-    const merged = [...baseList];
+    const merged = baseList.map((m, idx) => ({
+      ...m,
+      distance_km: (1.2 + (idx * 0.7)).toFixed(1),
+      location: {
+        name: `${locName} (${locPincode})`,
+        pincode: locPincode,
+        district: typeof selectedLocState === 'object' ? selectedLocState.district : 'Bhopal'
+      }
+    }));
 
     if (workers && workers.length > 0) {
       workers.forEach((w) => {
@@ -769,15 +806,19 @@ export default function FindWorkersView({
           merged.push({
             ...w,
             hourly_rate: Math.round((Number(w.daily_rate) || 500) / 8),
-            distance_km: w.distance_km || 3.2,
+            distance_km: w.distance_km || (1.5 + (merged.length * 0.4)).toFixed(1),
             availableStatus: 'Available for tomorrow',
-            isRecommended: false
+            isRecommended: false,
+            location: {
+              name: `${locName} (${locPincode})`,
+              pincode: locPincode
+            }
           });
         }
       });
     }
     return merged;
-  }, [activeTradeId, activeTrade, workers]);
+  }, [activeTradeId, activeTrade, workers, locName, locPincode, selectedLocState]);
 
   // Apply search, quick filters, and sorting
   const filteredList = useMemo(() => {
@@ -1008,8 +1049,8 @@ export default function FindWorkersView({
               </div>
             </div>
 
-            {/* 2. Results Meta & Sort Bar (Placed directly UNDER the Search Toolbar) */}
-            <div className="hl-results-meta-bar">
+            {/* 2. Results Meta & Sort Bar with Live PINCODE Switcher */}
+            <div className="hl-results-meta-bar" style={{ flexWrap: 'wrap', gap: '10px' }}>
               <div className="hl-results-meta-left">
                 <div className="hl-count-pill-row">
                   <h2 className="hl-results-count-title" style={{ fontSize: '20px' }}>
@@ -1022,7 +1063,62 @@ export default function FindWorkersView({
                 </div>
               </div>
 
-              {/* Sort By Dropdown (Integrated cleanly on the right of the meta bar) */}
+              {/* Service Area PINCODE Switcher Pill */}
+              <div style={{ position: 'relative' }} ref={locSwitcherRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsLocSwitcherOpen(!isLocSwitcherOpen)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: '#FFF7ED',
+                    border: '1.5px solid #FDBA74',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#EA580C',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Click to search workers in a different PINCODE area"
+                >
+                  <MapPin size={13} style={{ color: '#EA580C' }} />
+                  <span>PINCODE: <strong>{locPincode}</strong> ({locName})</span>
+                  <ChevronDown
+                    size={12}
+                    style={{
+                      transform: isLocSwitcherOpen ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 0.15s ease'
+                    }}
+                  />
+                </button>
+
+                {isLocSwitcherOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '115%',
+                    right: 0,
+                    zIndex: 150,
+                    minWidth: '340px'
+                  }}>
+                    <PincodeAddressSelector
+                      selectedPincode={locPincode}
+                      selectedAddress={selectedLocState}
+                      onSelect={(addr) => {
+                        handleSelectLoc(addr);
+                        setIsLocSwitcherOpen(false);
+                      }}
+                      onClose={() => setIsLocSwitcherOpen(false)}
+                      variant="popover"
+                      title="Switch Service PINCODE"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Sort By Dropdown */}
               <div className="hl-toolbar-sort-box">
                 <span className="hl-toolbar-sort-label">Sort by:</span>
                 <select

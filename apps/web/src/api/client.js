@@ -139,6 +139,8 @@ export const api = {
   // Pan-India Pincode API
   searchPincodes: (query) =>
     apiRequest(`/pincode/search/${encodeURIComponent(query)}`),
+  getPincodeAddresses: (pincode) =>
+    apiRequest(`/pincode/details/${encodeURIComponent(pincode)}`),
   getPopularPincodes: () =>
     apiRequest('/pincode/popular')
 };

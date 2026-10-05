@@ -23,6 +23,8 @@ const PROFESSIONS = [
   'Appliance Repair'
 ];
 
+import PincodeAddressSelector from './PincodeAddressSelector';
+
 export default function WorkerOnboardingModal({ onClose, onSuccess }) {
   const { user, login, showToast, refreshUser } = useAuth();
 
@@ -33,7 +35,9 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
   // Form states
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || 'MP Nagar, Bhopal');
+  const [pincode, setPincode] = useState('462011');
+  const [showPincodeSelector, setShowPincodeSelector] = useState(false);
+  const [address, setAddress] = useState(user?.address || 'MP Nagar');
   const [city, setCity] = useState('Bhopal');
 
   const [profession, setProfession] = useState('Electrician');
@@ -96,7 +100,8 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
         languages,
         daily_rate: Number(dailyRate),
         bio,
-        location_name: `${address}, ${city}`
+        pincode,
+        location_name: `${address}, ${city} (${pincode})`
       };
 
       const res = await api.registerWorker(payload);
@@ -227,18 +232,69 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">City / Operational Hub</label>
-                <select className="form-select" value={city} onChange={(e) => setCity(e.target.value)}>
-                  <option value="Bhopal">Bhopal</option>
-                  <option value="Indore">Indore</option>
-                  <option value="Lucknow">Lucknow</option>
-                  <option value="Jaipur">Jaipur</option>
-                  <option value="Patna">Patna</option>
-                </select>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Operational PINCODE & Hub</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPincodeSelector(!showPincodeSelector)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--primary, #EA580C)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: 0
+                    }}
+                  >
+                    <Sparkles size={12} />
+                    {showPincodeSelector ? 'Hide PINCODE Finder' : `Select PINCODE via API (${pincode})`}
+                  </button>
+                </div>
+
+                {showPincodeSelector && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <PincodeAddressSelector
+                      selectedPincode={pincode}
+                      onSelect={(addr) => {
+                        setPincode(addr.pincode);
+                        setCity(addr.district || 'Bhopal');
+                        setAddress(addr.name || addr.locality);
+                        setShowPincodeSelector(false);
+                      }}
+                      onClose={() => setShowPincodeSelector(false)}
+                      variant="inline"
+                      title="Select Operational PINCODE & Local Hub"
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ width: '120px', fontFamily: 'monospace', fontWeight: 600 }}
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="PINCODE"
+                    maxLength={6}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ flex: 1 }}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City / District"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Local Address</label>
+                <label className="form-label">Local Address / Area</label>
                 <input
                   className="form-input"
                   value={address}

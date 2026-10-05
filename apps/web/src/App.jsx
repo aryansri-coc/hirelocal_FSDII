@@ -45,8 +45,22 @@ export default function App() {
   const [selectedService, setSelectedService] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('Bhopal');
+  const [selectedLocation, setSelectedLocation] = useState({
+    pincode: '462011',
+    locality: 'MP Nagar',
+    district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    label: 'MP Nagar, Bhopal (462011)'
+  });
   const [commTypeFilter, setCommTypeFilter] = useState('');
   const [matchingDate, setMatchingDate] = useState('');
+
+  const handleSelectLocation = (loc) => {
+    setSelectedLocation(loc);
+    if (loc.district || loc.city) {
+      setSelectedCity(loc.district || loc.city);
+    }
+  };
 
   // Modals state
   const [selectedWorkerDetail, setSelectedWorkerDetail] = useState(null);
@@ -189,6 +203,8 @@ export default function App() {
         onOpenSignup={() => setAuthModalState('signup')}
         onOpenWorkerOnboard={() => setShowWorkerOnboard(true)}
         selectedCity={selectedCity}
+        selectedLocation={selectedLocation}
+        onSelectLocation={handleSelectLocation}
         onSelectCity={(city) => {
           setSelectedCity(city);
           fetchWorkers(selectedService);
@@ -219,6 +235,8 @@ export default function App() {
               }}
               workers={workers}
               services={services}
+              selectedLocation={selectedLocation}
+              onSelectLocation={handleSelectLocation}
             />
           )}
 
@@ -227,7 +245,8 @@ export default function App() {
             <FindWorkersView
               workers={workers}
               selectedService={selectedService || 'Electrician'}
-              selectedLocation={selectedCity ? `${selectedCity}, Bihar` : 'Govindpura, Bihar'}
+              selectedLocation={selectedLocation}
+              onSelectLocation={handleSelectLocation}
               onBack={() => setActiveTab('landing')}
               onSelectWorker={(w) => setSelectedWorkerDetail(w)}
               onBookWorker={(w) => handleBookWorker(w)}
@@ -352,6 +371,7 @@ export default function App() {
         <JobBookingModal
           worker={bookingWorker.worker_id ? bookingWorker : null}
           defaultService={bookingWorker.profession}
+          selectedLocation={selectedLocation}
           onClose={() => setBookingWorker(null)}
           onJobCreated={() => {
             setActiveTab('customer_bookings');

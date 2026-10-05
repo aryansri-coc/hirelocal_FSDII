@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PincodeAddressSelector from './PincodeAddressSelector';
 import {
   Search,
   MapPin,
@@ -11,25 +12,28 @@ import {
   Check
 } from 'lucide-react';
 
-const CITIES = [
-  'Govindpura, Bihar',
-  'Boring Road, Patna',
-  'Kankarbagh, Patna',
-  'Rajendra Nagar, Patna',
-  'Muzaffarpur, Bihar',
-  'Gaya, Bihar',
-  'MP Nagar, Bhopal',
-  'Vijay Nagar, Indore'
-];
-
 export default function LandingHeroSection({
   onSearch,
   onSelectLocation,
-  currentLocation = 'Govindpura, Bihar'
+  currentLocation = 'MP Nagar (462011)'
 }) {
   const [searchInput, setSearchInput] = useState('');
-  const [selectedLoc, setSelectedLoc] = useState(currentLocation);
+  const [selectedLoc, setSelectedLoc] = useState(
+    typeof currentLocation === 'object' && currentLocation?.pincode
+      ? `${currentLocation.locality || currentLocation.name} (${currentLocation.pincode})`
+      : (typeof currentLocation === 'string' ? currentLocation : 'MP Nagar (462011)')
+  );
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentLocation) {
+      if (typeof currentLocation === 'object' && currentLocation.pincode) {
+        setSelectedLoc(`${currentLocation.locality || currentLocation.name} (${currentLocation.pincode})`);
+      } else if (typeof currentLocation === 'string') {
+        setSelectedLoc(currentLocation);
+      }
+    }
+  }, [currentLocation]);
 
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
@@ -38,11 +42,12 @@ export default function LandingHeroSection({
     }
   };
 
-  const handleCityPick = (city) => {
-    setSelectedLoc(city);
+  const handleAddressPick = (addr) => {
+    const label = `${addr.name || addr.locality} (${addr.pincode})`;
+    setSelectedLoc(label);
     setIsLocDropdownOpen(false);
     if (onSelectLocation) {
-      onSelectLocation(city);
+      onSelectLocation(addr);
     }
   };
 
@@ -87,9 +92,10 @@ export default function LandingHeroSection({
                 <div
                   className="hl-unified-loc-col"
                   onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
+                  title="Search location by PINCODE"
                 >
                   <MapPin size={15} style={{ color: 'var(--primary)' }} />
-                  <span>{selectedLoc || 'Your location'}</span>
+                  <span>{selectedLoc || 'Select PINCODE'}</span>
                   <ChevronDown
                     size={14}
                     style={{
@@ -100,49 +106,22 @@ export default function LandingHeroSection({
                   />
                 </div>
 
-                {/* Locality Popover Dropdown */}
+                {/* PINCODE Locality Popover Dropdown */}
                 {isLocDropdownOpen && (
                   <div style={{
                     position: 'absolute',
-                    top: '110%',
+                    top: '115%',
                     right: 0,
-                    backgroundColor: '#FFFFFF',
-                    border: '1.5px solid #E5E7EB',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.12)',
-                    minWidth: '220px',
-                    zIndex: 50,
-                    padding: '6px',
-                    animation: 'hlFadeScale 0.15s ease'
+                    zIndex: 100,
+                    minWidth: '340px'
                   }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', padding: '6px 10px', textTransform: 'uppercase' }}>
-                      Select Location Hub
-                    </div>
-                    {CITIES.map((city) => (
-                      <div
-                        key={city}
-                        onClick={() => handleCityPick(city)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: selectedLoc === city ? 700 : 500,
-                          color: selectedLoc === city ? '#EA580C' : '#374151',
-                          backgroundColor: selectedLoc === city ? '#FFF7ED' : 'transparent',
-                          cursor: 'pointer',
-                          transition: 'background-color 0.12s ease'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <MapPin size={13} style={{ color: selectedLoc === city ? '#EA580C' : '#9CA3AF' }} />
-                          <span>{city}</span>
-                        </div>
-                        {selectedLoc === city && <Check size={14} style={{ color: '#EA580C' }} />}
-                      </div>
-                    ))}
+                    <PincodeAddressSelector
+                      selectedPincode="462011"
+                      onSelect={handleAddressPick}
+                      onClose={() => setIsLocDropdownOpen(false)}
+                      variant="popover"
+                      title="Find Workers by PINCODE"
+                    />
                   </div>
                 )}
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
+import PincodeAddressSelector from './PincodeAddressSelector';
 import {
   Home,
   MapPin,
@@ -19,16 +20,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-const POPULAR_LOCALITIES = [
-  { label: 'Govindpura, Bhopal', city: 'Bhopal' },
-  { label: 'MP Nagar, Bhopal', city: 'Bhopal' },
-  { label: 'Arera Colony, Bhopal', city: 'Bhopal' },
-  { label: 'Vijay Nagar, Indore', city: 'Indore' },
-  { label: 'Boring Road, Patna', city: 'Patna' },
-  { label: 'Hazratganj, Lucknow', city: 'Lucknow' },
-  { label: 'Malviya Nagar, Jaipur', city: 'Jaipur' }
-];
-
 export default function Navbar({
   activeTab,
   setActiveTab,
@@ -36,7 +27,9 @@ export default function Navbar({
   onOpenSignup,
   onOpenWorkerOnboard,
   selectedCity = 'Bhopal',
-  onSelectCity
+  onSelectCity,
+  selectedLocation,
+  onSelectLocation
 }) {
   const {
     user,
@@ -53,7 +46,9 @@ export default function Navbar({
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [currentLocLabel, setCurrentLocLabel] = useState(
-    selectedCity ? `Govindpura, ${selectedCity}` : 'Govindpura, Bhopal'
+    selectedLocation?.pincode
+      ? `${selectedLocation.locality || selectedLocation.name} (${selectedLocation.pincode})`
+      : 'MP Nagar (462011)'
   );
 
   const locDropdownRef = useRef(null);
@@ -61,19 +56,16 @@ export default function Navbar({
 
   const role = user?.role || 'public';
 
-  // Sync city label if selectedCity changes
+  // Sync location label if selectedLocation or selectedCity changes
   useEffect(() => {
-    if (selectedCity) {
-      const match = POPULAR_LOCALITIES.find(
-        (l) => l.city.toLowerCase() === selectedCity.toLowerCase()
-      );
-      if (match) {
-        setCurrentLocLabel(match.label);
-      } else {
-        setCurrentLocLabel(`${selectedCity}`);
-      }
+    if (selectedLocation) {
+      const pin = selectedLocation.pincode ? ` (${selectedLocation.pincode})` : '';
+      const name = selectedLocation.locality || selectedLocation.name || selectedLocation.district || 'Location';
+      setCurrentLocLabel(`${name}${pin}`);
+    } else if (selectedCity) {
+      setCurrentLocLabel(`${selectedCity}`);
     }
-  }, [selectedCity]);
+  }, [selectedLocation, selectedCity]);
 
   // Click outside listener to dismiss popovers
   useEffect(() => {
@@ -99,10 +91,15 @@ export default function Navbar({
   };
 
   const handleSelectLoc = (loc) => {
-    setCurrentLocLabel(loc.label);
+    const pin = loc.pincode ? ` (${loc.pincode})` : '';
+    const name = loc.locality || loc.name || loc.district || 'Location';
+    setCurrentLocLabel(`${name}${pin}`);
     setIsLocDropdownOpen(false);
+    if (onSelectLocation) {
+      onSelectLocation(loc);
+    }
     if (onSelectCity) {
-      onSelectCity(loc.city);
+      onSelectCity(loc.district || loc.city || 'Bhopal');
     }
   };
 
@@ -314,26 +311,15 @@ export default function Navbar({
 
               {/* Location Popover */}
               {isLocDropdownOpen && (
-                <div className="hl-loc-popover">
-                  <div className="hl-loc-popover-head">Select Local Service Hub</div>
-                  {POPULAR_LOCALITIES.map((loc) => (
-                    <div
-                      key={loc.label}
-                      className={`hl-loc-popover-item ${currentLocLabel === loc.label ? 'is-selected' : ''}`}
-                      onClick={() => handleSelectLoc(loc)}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin
-                          size={13}
-                          style={{ color: currentLocLabel === loc.label ? 'var(--primary)' : 'var(--text-muted)' }}
-                        />
-                        <span>{loc.label}</span>
-                      </div>
-                      {currentLocLabel === loc.label && (
-                        <Check size={14} style={{ color: 'var(--primary)' }} />
-                      )}
-                    </div>
-                  ))}
+                <div className="hl-pincode-popover-container">
+                  <PincodeAddressSelector
+                    selectedPincode={selectedLocation?.pincode || '462011'}
+                    selectedAddress={selectedLocation}
+                    onSelect={handleSelectLoc}
+                    onClose={() => setIsLocDropdownOpen(false)}
+                    variant="popover"
+                    title="Select Service Location by PINCODE"
+                  />
                 </div>
               )}
             </div>
@@ -565,24 +551,42 @@ export default function Navbar({
             {/* Quick Hub Selector on Mobile */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '8px 12px',
+              flexDirection: 'column',
+              gap: '8px',
+              padding: '10px 12px',
               backgroundColor: 'var(--surface-alt)',
-              borderRadius: '8px',
+              borderRadius: '10px',
               fontSize: '13px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                <MapPin size={14} style={{ color: 'var(--primary)' }} />
-                <span>Location: {currentLocLabel}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                  <MapPin size={14} style={{ color: 'var(--primary)' }} />
+                  <span>PINCODE: {currentLocLabel}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
+                  style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '12px' }}
+                >
+                  {isLocDropdownOpen ? 'Close' : 'Change PINCODE'}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
-                style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '12px' }}
-              >
-                Change
-              </button>
+
+              {isLocDropdownOpen && (
+                <div style={{ marginTop: '6px' }}>
+                  <PincodeAddressSelector
+                    selectedPincode={selectedLocation?.pincode || '462011'}
+                    selectedAddress={selectedLocation}
+                    onSelect={(addr) => {
+                      handleSelectLoc(addr);
+                      setMobileMenuOpen(false);
+                    }}
+                    onClose={() => setIsLocDropdownOpen(false)}
+                    variant="inline"
+                    title="Select PINCODE Locality"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Mobile Nav Links */}
