@@ -141,6 +141,8 @@ export const api = {
     apiRequest(`/pincode/search/${encodeURIComponent(query)}`),
   getPincodeAddresses: (pincode) =>
     apiRequest(`/pincode/details/${encodeURIComponent(pincode)}`),
+  getPincodeGeo: (pincode) =>
+    apiRequest(`/pincode/geo/${encodeURIComponent(pincode)}`),
   getPopularPincodes: () =>
     apiRequest('/pincode/popular')
 };

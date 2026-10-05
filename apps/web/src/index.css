@@ -3016,6 +3016,40 @@ p {
   transform: scale(1.02);
 }
 
+/* Geographic Area Map & Radar Card */
+.hl-geo-map-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hl-geo-map-card:hover {
+  box-shadow: 0 24px 48px -12px rgba(234, 88, 12, 0.22), 0 0 0 2px rgba(234, 88, 12, 0.2);
+}
+
+@keyframes hl-pulse-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes hl-blink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
 /* POPULAR SERVICES SECTION (Mockup Image 1) */
 .hl-popular-services-section {
   padding: 40px 0 48px 0;

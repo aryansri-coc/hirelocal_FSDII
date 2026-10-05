@@ -119,11 +119,48 @@ export default function App() {
     fetchWorkers(srvName);
   };
 
-  const handleLandingSearch = (srvName, locName) => {
-    setSelectedService(srvName || '');
-    if (locName) setSearchTerm(locName);
+  const handleLandingSearch = async (srvName, locName) => {
+    let service = (srvName || '').trim();
+    let targetPin = null;
+
+    // Detect 6-digit PINCODE in service query (e.g. "electrician 824101")
+    const pinInSrv = service.match(/\b(\d{6})\b/);
+    if (pinInSrv) {
+      targetPin = pinInSrv[1];
+      service = service.replace(pinInSrv[0], '').trim();
+    }
+
+    // Detect 6-digit PINCODE in locName (e.g. "824101" or "Bihar (824101)")
+    if (locName) {
+      const pinInLoc = String(locName).match(/\b(\d{6})\b/);
+      if (pinInLoc) {
+        targetPin = pinInLoc[1];
+      }
+    }
+
+    if (targetPin) {
+      try {
+        const res = await api.getPincodeGeo(targetPin);
+        if (res && res.success) {
+          const resolvedLoc = {
+            pincode: targetPin,
+            locality: res.locality || targetPin,
+            district: res.district || '',
+            state: res.state || '',
+            label: `${res.locality || 'PINCODE ' + targetPin} (${targetPin})`
+          };
+          setSelectedLocation(resolvedLoc);
+          if (res.district) setSelectedCity(res.district);
+        }
+      } catch (err) {
+        console.warn('Failed to resolve search PINCODE:', err);
+      }
+    }
+
+    setSelectedService(service || 'Electrician');
+    setSearchTerm(''); // Keep search filter clean so workers aren't excluded by numeric digits
     setActiveTab('explore');
-    fetchWorkers(srvName || '');
+    fetchWorkers(service || 'Electrician');
   };
 
   const handleRunMatchEngine = async () => {

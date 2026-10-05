@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import WorkerCard from './WorkerCard';
 import PincodeAddressSelector from './PincodeAddressSelector';
+import { api } from '../api/client';
 import {
   ArrowLeft,
   Search,
@@ -820,16 +821,45 @@ export default function FindWorkersView({
     return merged;
   }, [activeTradeId, activeTrade, workers, locName, locPincode, selectedLocState]);
 
+  // Auto-detect 6-digit PINCODE in search input and switch location dynamically
+  useEffect(() => {
+    const trimmed = (searchInput || '').trim();
+    const pinMatch = trimmed.match(/\b(\d{6})\b/);
+    if (pinMatch) {
+      const pin = pinMatch[1];
+      api.getPincodeGeo(pin).then((res) => {
+        if (res && res.success) {
+          const newLoc = {
+            pincode: pin,
+            locality: res.locality || pin,
+            district: res.district || '',
+            state: res.state || '',
+            label: `${res.locality || pin} (${pin})`
+          };
+          setSelectedLocState(newLoc);
+          if (onSelectLocation) onSelectLocation(newLoc);
+        }
+      }).catch(() => {});
+    }
+  }, [searchInput]);
+
   // Apply search, quick filters, and sorting
   const filteredList = useMemo(() => {
     return currentTradeWorkers.filter((w) => {
       // Search input filter
       if (searchInput.trim()) {
-        const q = searchInput.toLowerCase();
-        const matchesName = w.name?.toLowerCase().includes(q);
-        const matchesSkills = w.skills?.some((s) => s.toLowerCase().includes(q));
-        const matchesProf = w.profession?.toLowerCase().includes(q);
-        if (!matchesName && !matchesSkills && !matchesProf) return false;
+        const rawQ = searchInput.toLowerCase().trim();
+        // If the query is strictly a 6-digit PINCODE, do NOT filter out workers
+        if (!/^\d{6}$/.test(rawQ)) {
+          // If query has trade or skill name along with a PINCODE (e.g. "plumber 824101"), remove the 6 digits
+          const q = rawQ.replace(/\b\d{6}\b/, '').trim();
+          if (q) {
+            const matchesName = w.name?.toLowerCase().includes(q);
+            const matchesSkills = w.skills?.some((s) => s.toLowerCase().includes(q));
+            const matchesProf = w.profession?.toLowerCase().includes(q);
+            if (!matchesName && !matchesSkills && !matchesProf) return false;
+          }
+        }
       }
 
       // Quick Filter Chips

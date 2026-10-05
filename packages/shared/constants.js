@@ -45,6 +45,8 @@ export const BHOPAL_PINCODES_DATA = Object.freeze([
 ]);
 
 export const PAN_INDIA_POPULAR_PINCODES = Object.freeze([
+  { pincode: '824101', locality: 'Aurangabad (BH)', district: 'Aurangabad', state: 'Bihar', label: 'Aurangabad, Bihar (824101)', workersCount: 4 },
+  { pincode: '143410', locality: 'Sarhali / Dadeha', district: 'Amritsar', state: 'Punjab', label: 'Amritsar / Tarn Taran (143410)', workersCount: 3 },
   { pincode: '462011', locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh', label: 'MP Nagar, Bhopal (462011)', workersCount: 4 },
   { pincode: '462016', locality: 'Arera Colony', district: 'Bhopal', state: 'Madhya Pradesh', label: 'Arera Colony, Bhopal (462016)', workersCount: 3 },
   { pincode: '462023', locality: 'Indrapuri / Govindpura', district: 'Bhopal', state: 'Madhya Pradesh', label: 'Govindpura, Bhopal (462023)', workersCount: 4 },
