@@ -237,30 +237,31 @@ export default function CustomerDashboard({
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main>
+      <main style={{ minWidth: 0, width: '100%' }}>
         {/* VIEW 1: OVERVIEW */}
         {subTab === 'overview' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
             {/* Header Greeting */}
-            <div>
-              <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '4px' }}>
+            <div style={{ paddingBottom: '2px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '6px', lineHeight: 1.2 }}>
                 {greeting}, {user?.name?.split(' ')[0]}
               </h1>
-              <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                 Manage your scheduled bookings, find trusted local trades, and track requests.
               </p>
             </div>
 
             {/* Quick Service Search Card */}
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div className="card" style={{ padding: '22px', width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
                 Quick Search
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <input
                     type="text"
                     className="form-input"
+                    style={{ height: '44px', width: '100%', boxSizing: 'border-box' }}
                     placeholder="Search for an Electrician, Plumber, AC Repair, Painter..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -273,6 +274,7 @@ export default function CustomerDashboard({
                 </div>
                 <button
                   className="btn btn-primary"
+                  style={{ height: '44px', padding: '0 22px', flexShrink: 0 }}
                   onClick={() => {
                     if (onSelectService) onSelectService(searchQuery);
                   }}
@@ -283,7 +285,7 @@ export default function CustomerDashboard({
               </div>
 
               {/* Service Badges */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px' }}>
                 {['Electrician', 'Plumber', 'AC Repair & Service', 'Carpenter', 'Painter'].map((srv) => (
                   <button
                     key={srv}
@@ -291,13 +293,15 @@ export default function CustomerDashboard({
                       if (onSelectService) onSelectService(srv);
                     }}
                     style={{
-                      background: 'none',
+                      background: 'var(--surface-alt)',
                       border: '1px solid var(--border)',
                       borderRadius: 'var(--radius-sm)',
-                      padding: '4px 10px',
-                      fontSize: '12px',
+                      padding: '5px 12px',
+                      fontSize: '12.5px',
+                      fontWeight: 500,
                       color: 'var(--text-secondary)',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
                     }}
                   >
                     {srv}
@@ -308,9 +312,9 @@ export default function CustomerDashboard({
 
             {/* Upcoming Booking Card */}
             {upcomingJob ? (
-              <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--primary)' }}>
+              <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--primary)', width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--primary)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.04em' }}>
                     Upcoming Booking
                   </div>
                   <span className={`status-pill status-${upcomingJob.status}`}>
@@ -337,7 +341,7 @@ export default function CustomerDashboard({
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)' }}>
                       ₹{upcomingJob.estimated_cost}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Day-based fee</div>
@@ -357,19 +361,38 @@ export default function CustomerDashboard({
                 </div>
               </div>
             ) : (
-              <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '6px' }}>No upcoming bookings</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              <div className="card" style={{ padding: '36px 24px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary-light)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px'
+                }}>
+                  <Calendar size={22} />
+                </div>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>
+                  No upcoming bookings
+                </h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 18px', lineHeight: 1.5 }}>
                   Need an electrician, plumber, or carpenter? Book verified professionals nearby.
                 </p>
-                <button className="btn btn-primary btn-sm" onClick={() => onSelectService && onSelectService('')}>
+                <button
+                  className="btn btn-primary btn-sm"
+                  style={{ height: '38px', padding: '0 20px' }}
+                  onClick={() => onSelectService && onSelectService('')}
+                >
                   Find a Worker
                 </button>
               </div>
             )}
 
             {/* Recent Bookings List */}
-            <div>
+            <div style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Recent Bookings</h3>
                 <button
@@ -381,20 +404,20 @@ export default function CustomerDashboard({
               </div>
 
               {loading ? (
-                <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div className="card" style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', width: '100%', boxSizing: 'border-box' }}>
                   Loading bookings...
                 </div>
               ) : jobs.length === 0 ? (
-                <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div className="card" style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}>
                   No bookings yet.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                   {jobs.slice(0, 3).map((job) => (
                     <div
                       key={job.job_id}
                       className="card"
-                      style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}
+                      style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}
                     >
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

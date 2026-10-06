@@ -489,6 +489,18 @@ export default function Navbar({
 
                       <button
                         type="button"
+                        className="hl-user-dropdown-item"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          toggleDemoMode();
+                        }}
+                      >
+                        <Wrench size={15} style={{ color: demoMode ? 'var(--warning)' : 'var(--text-muted)' }} />
+                        <span>{demoMode ? 'Exit Testing Mode' : 'Toggle Testing Mode'}</span>
+                      </button>
+
+                      <button
+                        type="button"
                         className="hl-user-dropdown-item danger"
                         onClick={() => {
                           setIsProfileMenuOpen(false);
@@ -508,9 +520,9 @@ export default function Navbar({
                   className="btn btn-secondary btn-sm"
                   onClick={() => logout(true)}
                   title="Sign Out"
-                  style={{ padding: '6px 10px', height: '36px' }}
+                  style={{ padding: '6px 9px', height: '34px', flexShrink: 0 }}
                 >
-                  <LogOut size={15} />
+                  <LogOut size={14} />
                 </button>
               </div>
             )}
@@ -524,14 +536,15 @@ export default function Navbar({
                 border: 'none',
                 color: demoMode ? 'var(--warning)' : 'var(--text-muted)',
                 cursor: 'pointer',
-                padding: '6px',
+                padding: '5px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '6px'
+                borderRadius: '6px',
+                flexShrink: 0
               }}
             >
-              <Wrench size={16} />
+              <Wrench size={15} />
             </button>
 
             {/* Mobile Hamburger Menu Button */}
