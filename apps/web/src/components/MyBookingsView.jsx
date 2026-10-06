@@ -485,7 +485,7 @@ export default function MyBookingsView({
                 <div className="hl-modal-info-box">
                   <div className="hl-modal-info-label">Booking Channel</div>
                   <div className="hl-modal-info-val">
-                    {selectedBookingDetails.communication_type === 'non_smartphone' ? '📞 Phone / CallBot' : '📱 App Booking'}
+                    {selectedBookingDetails.communication_type === 'non_smartphone' ? 'Phone / CallBot' : 'App Booking'}
                   </div>
                 </div>
               </div>

@@ -57,7 +57,7 @@ export default function LandingHeroSection({
             setPincodeInput(res.pincode);
             const label = `${res.locality || res.district || 'Current Location'} (${res.pincode})`;
             setSelectedLoc(label);
-            setGpsMessage(`🎯 GPS Location detected: ${res.locality || ''} (${res.pincode})`);
+            setGpsMessage(`GPS Location detected: ${res.locality || ''} (${res.pincode})`);
 
             if (onSelectLocation) {
               onSelectLocation({
@@ -333,7 +333,7 @@ export default function LandingHeroSection({
                 ) : (
                   <>
                     <Navigation size={11} style={{ color: '#2563EB' }} />
-                    <span>🎯 Use GPS</span>
+                    <span>Use GPS</span>
                   </>
                 )}
               </button>
@@ -372,7 +372,7 @@ export default function LandingHeroSection({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  📍 {item.name}
+                  {item.name}
                 </button>
               ))}
             </div>

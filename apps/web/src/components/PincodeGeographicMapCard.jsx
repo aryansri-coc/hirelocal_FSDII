@@ -448,7 +448,7 @@ export default function PincodeGeographicMapCard({
                     }}
                     title={`Click to focus: ${loc.fullAddress || loc.name}`}
                   >
-                    📍 {loc.name}
+                    {loc.name}
                   </button>
                 ))
               ) : (

@@ -602,8 +602,11 @@ export default function CustomerDashboard({
                     >
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '14px' }}>{alt.name}</div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                          ★ {alt.rating?.toFixed(1) || '5.0'} • ₹{alt.daily_rate}/day
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                          <span>{alt.rating?.toFixed(1) || '5.0'}</span>
+                          <span>•</span>
+                          <span>₹{alt.daily_rate}/day</span>
                         </div>
                       </div>
                       <button

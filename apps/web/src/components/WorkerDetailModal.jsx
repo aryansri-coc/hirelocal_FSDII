@@ -175,7 +175,7 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                     borderRadius: '6px'
                   }}>
                     <CheckCircle size={13} />
-                    <span>✓ Government Verified</span>
+                    <span>Government Verified</span>
                   </span>
                 </div>
 
@@ -210,7 +210,7 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                   </span>
                 </div>
 
-                {/* 🟢 Available tomorrow */}
+                {/* Available tomorrow */}
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -521,8 +521,9 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
             <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)' }}>
               ₹{dailyRate} <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>/ day</span>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 600 }}>
-              🟢 Available tomorrow
+            <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
+              <span>Available tomorrow</span>
             </div>
           </div>
 

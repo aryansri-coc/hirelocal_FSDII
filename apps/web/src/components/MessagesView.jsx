@@ -343,7 +343,7 @@ export default function MessagesView({ onFindWorker }) {
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {activeConv.profession} •{' '}
                     <span style={{ color: activeConv.online ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600 }}>
-                      {activeConv.online ? '🟢 Online' : 'Active today'}
+                      {activeConv.online ? 'Online' : 'Active today'}
                     </span>
                   </div>
                 </div>
@@ -381,7 +381,6 @@ export default function MessagesView({ onFindWorker }) {
               flexDirection: 'column',
               gap: '14px'
             }}>
-              {/* Trust banner inside chat */}
               <div style={{
                 textAlign: 'center',
                 margin: '0 auto 10px',
@@ -389,9 +388,13 @@ export default function MessagesView({ onFindWorker }) {
                 borderRadius: 'var(--radius-pill)',
                 backgroundColor: 'rgba(234, 229, 222, 0.6)',
                 fontSize: '11.5px',
-                color: 'var(--text-muted)'
+                color: 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
               }}>
-                🔒 Direct customer & artisan chat • HireLocal day-wage booking
+                <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
+                <span>Direct customer & artisan chat • HireLocal day-wage booking</span>
               </div>
 
               {activeConv.messages.map((msg) => {
