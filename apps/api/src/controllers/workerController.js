@@ -1,7 +1,8 @@
 import { db } from '../../../../database/db.js';
 import { matchWorkers, getAlternativeWorkers } from '../../../../packages/services/matchingEngine.js';
+import { validateWorkerProfile, isValidIndianPhone, normalizePhone } from '../../../../packages/validation/validators.js';
 import { calculateWorkerReliability } from '../../../../packages/services/reliabilityCalculator.js';
-import { validateWorkerProfile } from '../../../../packages/validation/validators.js';
+import { getCoordinatesForPincode } from '../routes/pincodeRoutes.js';
 
 export async function getAllWorkers(req, res, next) {
   try {
@@ -28,7 +29,9 @@ export async function getAllWorkers(req, res, next) {
         w.name.toLowerCase().includes(term) ||
         w.profession.toLowerCase().includes(term) ||
         (w.skills && w.skills.some((s) => s.toLowerCase().includes(term))) ||
-        (w.location?.name && w.location.name.toLowerCase().includes(term))
+        (w.location?.name && w.location.name.toLowerCase().includes(term)) ||
+        (w.pincode && String(w.pincode).includes(term)) ||
+        (w.location?.pincode && String(w.location.pincode).includes(term))
       );
     }
 
@@ -149,7 +152,7 @@ export async function getWorkerAlternatives(req, res, next) {
  */
 export async function registerAsWorker(req, res, next) {
   try {
-    const user = req.user;
+    let user = req.user;
     const {
       name,
       phone,
@@ -163,7 +166,8 @@ export async function registerAsWorker(req, res, next) {
       working_days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       communication_type = 'smartphone',
       languages = ['hi'],
-      daily_rate = 500
+      daily_rate = 500,
+      pincode
     } = req.body;
 
     if (!profession || profession.trim().length < 2) {
@@ -171,6 +175,41 @@ export async function registerAsWorker(req, res, next) {
         success: false,
         error: { message: 'Primary profession/trade is required.' }
       });
+    }
+
+    // Auto-create or link user if unauthenticated
+    if (!user) {
+      if (!phone || !isValidIndianPhone(phone)) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'A valid 10-digit mobile number is required to register as a worker.' }
+        });
+      }
+
+      const cleanPhone = normalizePhone(phone);
+      user = db.findOne('users', (u) => normalizePhone(u.phone) === cleanPhone);
+
+      if (!user) {
+        const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        user = {
+          user_id: userId,
+          name: name?.trim() || 'Skilled Pro',
+          phone: cleanPhone,
+          email: null,
+          address: location_name || `${city}, MP`,
+          role: 'worker',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        db.insert('users', user);
+      } else {
+        db.update('users', (u) => u.user_id === user.user_id, {
+          role: 'worker',
+          name: name?.trim() || user.name
+        });
+        user = db.findById('users', 'user_id', user.user_id);
+      }
     }
 
     // Check if worker already exists for this user
@@ -182,6 +221,17 @@ export async function registerAsWorker(req, res, next) {
       ? skills.split(',').map((s) => s.trim()).filter(Boolean)
       : [profession];
 
+    const targetPin = (pincode || '462011').toString().trim();
+    let coords = { lat: 23.2332, lng: 77.4343 };
+    try {
+      const resolved = await getCoordinatesForPincode(targetPin);
+      if (resolved && resolved.lat && resolved.lng) {
+        coords = { lat: resolved.lat, lng: resolved.lng };
+      }
+    } catch (e) {}
+
+    const locName = location_name || (address ? `${address}, ${city}` : `${city}, MP`);
+
     if (worker) {
       // Update existing worker profile
       const updates = {
@@ -189,10 +239,13 @@ export async function registerAsWorker(req, res, next) {
         skills: parsedSkills,
         experience: Number(experience) || 1,
         bio: bio?.trim() || worker.bio,
+        pincode: targetPin,
+        location_name: locName,
         location: {
-          name: location_name || `${city}, MP`,
-          lat: 23.2332,
-          lng: 77.4343
+          name: locName,
+          pincode: targetPin,
+          lat: coords.lat,
+          lng: coords.lng
         },
         service_radius: Number(service_radius) || 15,
         working_days: Array.isArray(working_days) ? working_days : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -206,6 +259,13 @@ export async function registerAsWorker(req, res, next) {
       db.update('workers', (w) => w.worker_id === worker.worker_id, updates);
       worker = db.findById('workers', 'worker_id', worker.worker_id);
 
+      // Sync user address and pincode
+      db.update('users', (u) => u.user_id === user.user_id, {
+        address: locName,
+        pincode: targetPin,
+        updated_at: new Date().toISOString()
+      });
+
       db.addAuditLog({
         actorId: user.user_id,
         actorName: user.name,
@@ -213,7 +273,7 @@ export async function registerAsWorker(req, res, next) {
         entityType: 'worker',
         entityId: worker.worker_id,
         source: 'web',
-        metadata: { profession }
+        metadata: { profession, pincode: targetPin, service_radius }
       });
     } else {
       // Create brand new worker profile
@@ -229,10 +289,13 @@ export async function registerAsWorker(req, res, next) {
         experience: Number(experience) || 1,
         language: languages[0] || 'hi',
         languages: Array.isArray(languages) ? languages : ['hi'],
+        pincode: targetPin,
+        location_name: locName,
         location: {
-          name: location_name || `${city}, MP`,
-          lat: 23.2332,
-          lng: 77.4343
+          name: locName,
+          pincode: targetPin,
+          lat: coords.lat,
+          lng: coords.lng
         },
         service_radius: Number(service_radius) || 15,
         working_days: Array.isArray(working_days) ? working_days : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -249,6 +312,13 @@ export async function registerAsWorker(req, res, next) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+
+      // Sync user address and pincode
+      db.update('users', (u) => u.user_id === user.user_id, {
+        address: locName,
+        pincode: targetPin,
+        updated_at: new Date().toISOString()
+      });
 
       db.insert('workers', worker);
 
@@ -282,11 +352,13 @@ export async function registerAsWorker(req, res, next) {
     }
 
     const updatedUser = db.findById('users', 'user_id', user.user_id);
+    const token = `token_${user.user_id}`;
 
     return res.status(201).json({
       success: true,
       message: 'Worker onboarding completed successfully!',
       data: {
+        token,
         worker,
         user: updatedUser
       }
@@ -332,7 +404,9 @@ export async function updateWorkerProfile(req, res, next) {
       'daily_rate',
       'status',
       'bio',
-      'working_days'
+      'working_days',
+      'pincode',
+      'location_name'
     ];
 
     const cleanUpdates = {};
@@ -342,8 +416,53 @@ export async function updateWorkerProfile(req, res, next) {
       }
     }
 
+    // Handle permanent pincode, location, and service radius updates
+    const newPincode = (updates.pincode || (updates.location && updates.location.pincode) || worker.pincode || worker.location?.pincode || '462011').toString().trim();
+    const newLocationName = (updates.location_name || (updates.location && updates.location.name) || worker.location_name || worker.location?.name || 'Local Area').toString().trim();
+
+    cleanUpdates.pincode = newPincode;
+    cleanUpdates.location_name = newLocationName;
+
+    if (updates.service_radius !== undefined) {
+      cleanUpdates.service_radius = Math.max(1, Math.min(100, Number(updates.service_radius) || 15));
+    }
+
+    let lat = updates.lat || (updates.location && updates.location.lat) || worker.location?.lat;
+    let lng = updates.lng || (updates.location && updates.location.lng) || worker.location?.lng;
+
+    // If pincode changed or coords are default, resolve high-accuracy postal coords
+    if (updates.pincode || !lat || !lng) {
+      try {
+        const resolved = await getCoordinatesForPincode(newPincode);
+        if (resolved && resolved.lat && resolved.lng) {
+          lat = resolved.lat;
+          lng = resolved.lng;
+        }
+      } catch (e) {
+        // Fallback to existing coordinates
+      }
+    }
+
+    cleanUpdates.location = {
+      name: newLocationName,
+      pincode: newPincode,
+      lat: Number(lat) || 23.2332,
+      lng: Number(lng) || 77.4343
+    };
+
+    cleanUpdates.updated_at = new Date().toISOString();
+
     db.update('workers', (w) => w.worker_id === id, cleanUpdates);
     const updated = db.findById('workers', 'worker_id', id);
+
+    // Sync permanent pincode and address with user record
+    if (worker.user_id) {
+      db.update('users', (u) => u.user_id === worker.user_id, {
+        pincode: newPincode,
+        address: newLocationName,
+        updated_at: new Date().toISOString()
+      });
+    }
 
     db.addAuditLog({
       actorId: req.user.user_id,
@@ -357,7 +476,7 @@ export async function updateWorkerProfile(req, res, next) {
 
     return res.json({
       success: true,
-      message: 'Worker profile updated successfully.',
+      message: 'Worker profile and working area updated successfully.',
       data: updated
     });
   } catch (err) {

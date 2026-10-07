@@ -7,7 +7,7 @@ import {
   registerAsWorker,
   updateWorkerProfile
 } from '../controllers/workerController.js';
-import { authenticate } from '../middleware/authMiddleware.js';
+import { authenticate, optionalAuthenticate } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
@@ -16,8 +16,8 @@ router.get('/alternatives', getWorkerAlternatives);
 router.get('/', getAllWorkers);
 router.get('/:id', getWorkerById);
 
-router.post('/register', authenticate, registerAsWorker);
-router.post('/profile', authenticate, registerAsWorker);
+router.post('/register', optionalAuthenticate, registerAsWorker);
+router.post('/profile', optionalAuthenticate, registerAsWorker);
 router.patch('/:id', authenticate, updateWorkerProfile);
 
 export default router;

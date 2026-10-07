@@ -106,7 +106,11 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
 
       const res = await api.registerWorker(payload);
       if (res.success) {
-        showToast('Registration successful! Welcome to HireLocal.', 'success');
+        if (res.data?.token) {
+          localStorage.setItem('hirelocal_token', res.data.token);
+          localStorage.setItem('hirelocal_user_id', res.data.user.user_id);
+        }
+        showToast('Registration successful! Welcome to HireLocal Pro.', 'success');
         await refreshUser();
         if (onSuccess) onSuccess();
         onClose();
@@ -233,7 +237,7 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
 
               <div className="form-group">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <label className="form-label" style={{ margin: 0 }}>Operational PINCODE & Hub</label>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 700 }}>Permanent Base PINCODE & Working Hub</label>
                   <button
                     type="button"
                     onClick={() => setShowPincodeSelector(!showPincodeSelector)}
@@ -253,6 +257,9 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
                     <Sparkles size={12} />
                     {showPincodeSelector ? 'Hide PINCODE Finder' : `Select PINCODE via API (${pincode})`}
                   </button>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  This sets your permanent operating base. You can change your PINCODE and working area anytime from your Worker Dashboard.
                 </div>
 
                 {showPincodeSelector && (
@@ -398,15 +405,33 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
               </div>
 
               <div className="form-group" style={{ marginTop: '16px' }}>
-                <label className="form-label">Service Radius (km)</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={serviceRadius}
-                  onChange={(e) => setServiceRadius(e.target.value)}
-                  min={1}
-                  max={50}
-                />
+                <label className="form-label" style={{ fontWeight: 700 }}>Operational Service Radius (Working Area in km)</label>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  You will only be sent customer requests within this distance of your base PINCODE. You can increase or decrease this anytime from your dashboard.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <input
+                    type="range"
+                    min="3"
+                    max="50"
+                    step="1"
+                    value={serviceRadius}
+                    onChange={(e) => setServiceRadius(Number(e.target.value))}
+                    style={{ flex: 1, accentColor: 'var(--primary)' }}
+                  />
+                  <div style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    minWidth: '70px',
+                    textAlign: 'center'
+                  }}>
+                    {serviceRadius} km
+                  </div>
+                </div>
               </div>
             </div>
           )}

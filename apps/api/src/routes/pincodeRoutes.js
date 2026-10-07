@@ -103,7 +103,7 @@ const REGION_CENTROIDS = {
 /**
  * Resolve geographic coordinates for any 6-digit PINCODE across India
  */
-async function getCoordinatesForPincode(pin, addresses = []) {
+export async function getCoordinatesForPincode(pin, addresses = []) {
   if (PINCODE_COORDINATES[pin]) {
     return PINCODE_COORDINATES[pin];
   }

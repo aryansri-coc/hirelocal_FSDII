@@ -63,6 +63,35 @@ export function authenticate(req, res, next) {
 }
 
 /**
+ * Optional authentication middleware:
+ * Populates req.user and req.worker if token is provided,
+ * but allows unauthenticated requests to proceed.
+ */
+export function optionalAuthenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const customUserId = req.headers['x-user-id'];
+
+  let userId = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    userId = token.startsWith('token_') ? token.replace('token_', '') : token;
+  } else if (customUserId) {
+    userId = customUserId;
+  }
+
+  if (userId) {
+    const user = db.findById('users', 'user_id', userId);
+    if (user && user.status !== 'suspended' && user.status !== 'deactivated') {
+      req.user = user;
+      const workerProfile = db.findById('workers', 'user_id', user.user_id);
+      req.worker = workerProfile || null;
+    }
+  }
+
+  next();
+}
+
+/**
  * Role-based authorization middleware
  * Note: Admin is always permitted for maintenance
  */

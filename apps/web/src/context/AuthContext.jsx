@@ -56,6 +56,7 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.getMe();
       if (res.success) {
+        setToken(storedToken);
         setUser(res.data.user);
         setWorker(res.data.worker);
         setUnreadNotifsCount(res.data.unread_notifications_count || 0);

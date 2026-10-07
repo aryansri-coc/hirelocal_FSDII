@@ -414,10 +414,36 @@ export default function Navbar({
                     <div className="hl-user-dropdown-menu">
                       <div className="hl-user-dropdown-header">
                         <div className="hl-user-dropdown-name">
-                          <span>{user?.name || 'User'}</span>
-                          <span className={`hl-role-pill-tiny role-${role}`}>
-                            {role.toUpperCase()}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{user?.name || 'User'}</span>
+                            <span className={`hl-role-pill-tiny role-${role}`}>
+                              {role.toUpperCase()}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="hl-dropdown-icon-btn"
+                              onClick={() => {
+                                setIsProfileMenuOpen(false);
+                                toggleDemoMode();
+                              }}
+                              title={demoMode ? 'Exit Testing Mode' : 'Toggle Testing Mode'}
+                            >
+                              <Wrench size={13} style={{ color: demoMode ? 'var(--warning)' : 'var(--text-muted)' }} />
+                            </button>
+                            <button
+                              type="button"
+                              className="hl-dropdown-icon-btn danger"
+                              onClick={() => {
+                                setIsProfileMenuOpen(false);
+                                logout(true);
+                              }}
+                              title="Sign Out"
+                            >
+                              <LogOut size={13} />
+                            </button>
+                          </div>
                         </div>
                         <div className="hl-user-dropdown-sub">
                           {user?.phone || user?.email || 'Logged In'}
@@ -450,6 +476,18 @@ export default function Navbar({
                             <User size={15} style={{ color: '#16A34A' }} />
                             <span>Profile & Settings</span>
                           </button>
+                          <button
+                            type="button"
+                            className="hl-user-dropdown-item"
+                            onClick={() => {
+                              setIsProfileMenuOpen(false);
+                              onOpenWorkerOnboard();
+                            }}
+                            style={{ color: '#D97706', fontWeight: 600 }}
+                          >
+                            <Briefcase size={15} />
+                            <span>Become a Worker / Pro</span>
+                          </button>
                         </>
                       )}
 
@@ -462,6 +500,14 @@ export default function Navbar({
                           >
                             <LayoutDashboard size={15} style={{ color: 'var(--primary)' }} />
                             <span>Worker Dashboard</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="hl-user-dropdown-item"
+                            onClick={() => navigateTo('worker_area')}
+                          >
+                            <MapPin size={15} style={{ color: '#16A34A' }} />
+                            <span>Working Area & PINCODE</span>
                           </button>
                           <button
                             type="button"
@@ -513,39 +559,8 @@ export default function Navbar({
                     </div>
                   )}
                 </div>
-
-                {/* Direct Logout Icon Button */}
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => logout(true)}
-                  title="Sign Out"
-                  style={{ padding: '6px 9px', height: '34px', flexShrink: 0 }}
-                >
-                  <LogOut size={14} />
-                </button>
               </div>
             )}
-
-            {/* Dev Mode Toggle Wrench */}
-            <button
-              onClick={toggleDemoMode}
-              title={demoMode ? 'Exit Testing Mode' : 'Toggle Testing Mode'}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: demoMode ? 'var(--warning)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '5px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '6px',
-                flexShrink: 0
-              }}
-            >
-              <Wrench size={15} />
-            </button>
 
             {/* Mobile Hamburger Menu Button */}
             <button
@@ -725,17 +740,33 @@ export default function Navbar({
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{role.toUpperCase()}</div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout(true);
-                    }}
-                  >
-                    <LogOut size={14} />
-                    <span>Sign Out</span>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        toggleDemoMode();
+                      }}
+                      title={demoMode ? 'Exit Testing Mode' : 'Toggle Testing Mode'}
+                      style={{ padding: '6px 9px', height: '34px' }}
+                    >
+                      <Wrench size={14} style={{ color: demoMode ? 'var(--warning)' : 'var(--text-muted)' }} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout(true);
+                      }}
+                      title="Sign Out"
+                      style={{ height: '34px' }}
+                    >
+                      <LogOut size={14} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

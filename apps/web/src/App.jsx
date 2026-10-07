@@ -323,7 +323,7 @@ export default function App() {
           )}
 
           {/* WORKER DASHBOARD */}
-          {(activeTab === 'worker_dashboard' || activeTab === 'worker_requests' || activeTab === 'worker_jobs' || activeTab === 'worker_profile') && (
+          {(activeTab === 'worker_dashboard' || activeTab === 'worker_requests' || activeTab === 'worker_jobs' || activeTab === 'worker_profile' || activeTab === 'worker_area') && (
             <WorkerDashboard activeSubView={activeTab} />
           )}
 
@@ -377,8 +377,15 @@ export default function App() {
         <AuthModal
           initialMode={authModalState}
           onClose={() => setAuthModalState(null)}
-          onSuccess={() => {
+          onSuccess={(targetTab) => {
             fetchWorkers();
+            if (targetTab) {
+              setActiveTab(targetTab);
+            }
+          }}
+          onOpenWorkerOnboard={() => {
+            setAuthModalState(null);
+            setShowWorkerOnboard(true);
           }}
         />
       )}

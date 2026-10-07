@@ -3570,6 +3570,31 @@ p {
   margin-top: 2px;
 }
 
+.hl-dropdown-icon-btn {
+  background-color: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.hl-dropdown-icon-btn:hover {
+  background-color: var(--surface);
+  border-color: #cbd5e1;
+  color: var(--dark);
+}
+
+.hl-dropdown-icon-btn.danger:hover {
+  background-color: var(--error-light);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: var(--error);
+}
+
 .hl-user-dropdown-item {
   display: flex;
   align-items: center;
@@ -3736,6 +3761,107 @@ p {
   }
   .hl-role-pill-tiny {
     display: none !important;
+  }
+}
+
+/* ==========================================================================
+   Split Booking Page / Modal Layout: Booking on one side, Reviews on other
+   ========================================================================== */
+.hl-split-booking-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1250;
+  padding: 16px;
+  animation: hlFadeScale 0.18s ease;
+}
+
+.hl-split-booking-modal {
+  width: 100%;
+  max-width: 1120px;
+  max-height: 92vh;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 0 24px 64px -12px rgba(15, 23, 42, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.hl-split-booking-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.hl-split-booking-body {
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.hl-booking-form-col {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background-color: #FFFFFF;
+  overflow-y: auto;
+}
+
+.hl-booking-reviews-col {
+  padding: 24px 26px;
+  background-color: #FAFAF7;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+}
+
+.hl-review-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.hl-review-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.hl-write-review-box {
+  background-color: #FFFFFF;
+  border: 1.5px solid #FED7AA;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.06);
+}
+
+@media (max-width: 920px) {
+  .hl-split-booking-body {
+    grid-template-columns: 1fr;
+  }
+  .hl-booking-reviews-col {
+    border-left: none;
+    border-top: 1px solid var(--border);
   }
 }
 
