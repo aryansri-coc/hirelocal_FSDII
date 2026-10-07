@@ -551,12 +551,105 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 }
 
 /**
+ * Clean & validate 6-digit Indian Postal PINCODE
+ */
+function cleanIndianPin(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '');
+  return /^[1-9][0-9]{5}$/.test(digits) ? digits : null;
+}
+
+/**
+ * Format doorstep locality string from OSM / BigDataCloud components
+ */
+function buildDoorstepLocality(addr = {}) {
+  const street = addr.road || addr.pedestrian || addr.building || addr.amenity || addr.shop || '';
+  const subLocality = addr.residential || addr.neighbourhood || addr.suburb || addr.village || addr.hamlet || '';
+  const mainLocality = addr.city_district || addr.town || addr.city || addr.municipality || '';
+  const district = addr.state_district || addr.county || addr.district || '';
+
+  if (street && subLocality && street.toLowerCase() !== subLocality.toLowerCase()) {
+    return `${street}, ${subLocality}`;
+  }
+  if (subLocality && mainLocality && subLocality.toLowerCase() !== mainLocality.toLowerCase()) {
+    return `${subLocality}, ${mainLocality}`;
+  }
+  if (street && mainLocality && street.toLowerCase() !== mainLocality.toLowerCase()) {
+    return `${street}, ${mainLocality}`;
+  }
+  return subLocality || mainLocality || street || district || 'Local Area';
+}
+
+/**
+ * Resolve official 6-digit Indian PINCODE from locality names via India Post API
+ */
+async function resolvePinFromLocality(searchTerms = [], stateHint = '', districtHint = '') {
+  for (const rawTerm of searchTerms) {
+    if (!rawTerm || typeof rawTerm !== 'string') continue;
+    const term = rawTerm.trim();
+    if (term.length < 3) continue;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(term)}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data[0]?.Status === 'Success' && Array.isArray(data[0]?.PostOffice)) {
+          const list = data[0].PostOffice;
+          let matched = list;
+
+          if (stateHint) {
+            const sLower = stateHint.toLowerCase().trim();
+            const stateMatches = list.filter((po) => {
+              const poState = (po.State || '').toLowerCase();
+              return poState.includes(sLower) || sLower.includes(poState);
+            });
+            if (stateMatches.length > 0) matched = stateMatches;
+          }
+
+          if (districtHint && matched.length > 1) {
+            const dLower = districtHint.toLowerCase().trim();
+            const distMatches = matched.filter((po) => {
+              const poDist = (po.District || '').toLowerCase();
+              return poDist.includes(dLower) || dLower.includes(poDist);
+            });
+            if (distMatches.length > 0) matched = distMatches;
+          }
+
+          if (matched.length > 0 && matched[0].Pincode) {
+            return {
+              pincode: matched[0].Pincode,
+              addresses: matched.map(formatPostOffice),
+              matchedOffice: matched[0]
+            };
+          }
+        }
+      }
+    } catch (e) {
+      // Continue to next candidate term
+    }
+  }
+  return null;
+}
+
+/**
  * GET /api/pincode/reverse
- * Reverse-geocodes GPS coordinates (lat, lng) to 6-digit Indian PINCODE & official postal addresses
+ * Reverse-geocodes GPS coordinates (lat, lng) to doorstep Indian PINCODE & official postal addresses
+ * Highly accurate multi-tier resolution:
+ *   Tier 1: Nominatim OSM doorstep reverse geocode (zoom=18, addressdetails=1)
+ *   Tier 2: BigDataCloud client reverse geocoding
+ *   Tier 3: India Post API office resolution by subdistrict/locality/town
+ *   Tier 4: Nearest pre-seeded hub/postal center (offline fallback only)
  */
 router.get('/reverse', async (req, res) => {
   const lat = parseFloat(req.query.lat);
   const lng = parseFloat(req.query.lng);
+  const accuracyMeters = req.query.accuracy ? parseFloat(req.query.accuracy) : null;
 
   if (isNaN(lat) || isNaN(lng)) {
     return res.status(400).json({
@@ -565,92 +658,181 @@ router.get('/reverse', async (req, res) => {
     });
   }
 
-  // 1. Check if GPS is within 7 km of any pre-seeded hub
-  let closestHub = null;
-  let minDistance = Infinity;
-
-  for (const hub of PAN_INDIA_POPULAR_HUBS) {
-    if (hub.lat && hub.lng) {
-      const dist = getDistanceFromLatLonInKm(lat, lng, hub.lat, hub.lng);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestHub = hub;
-      }
-    }
-  }
-
-  if (closestHub && minDistance <= 7.0) {
-    const addresses = await fetchAllAddressesForPincode(closestHub.pincode);
+  // Check 11-meter in-memory cache
+  const cacheKey = `rev_${lat.toFixed(4)}_${lng.toFixed(4)}`;
+  if (pincodeCache.has(cacheKey)) {
     return res.json({
-      success: true,
-      source: 'hub_proximity',
-      distanceKm: minDistance.toFixed(2),
-      pincode: closestHub.pincode,
-      locality: closestHub.locality || closestHub.name,
-      district: closestHub.district,
-      state: closestHub.state,
-      label: `${closestHub.locality || closestHub.name} (${closestHub.pincode})`,
-      coordinates: { lat, lng },
-      addresses: addresses.slice(0, 10),
-      count: addresses.length
+      ...pincodeCache.get(cacheKey),
+      cached: true
     });
   }
 
-  // 2. Call Nominatim Reverse Geocoding with 3.5s timeout
+  let resolvedPincode = null;
+  let resolvedLocality = null;
+  let resolvedDistrict = null;
+  let resolvedState = null;
+  let resolvedAddresses = [];
+  let resolutionSource = null;
+
+  // 1. Tier 1: OpenStreetMap Nominatim with doorstep zoom 18
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
+    const timeout = setTimeout(() => controller.abort(), 6500);
 
-    const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
-      headers: { 'User-Agent': 'HireLocal-GPS-Reverse/1.0' },
-      signal: controller.signal
-    });
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'HireLocal-Doorstep-GPS/2.0 (contact: info@hirelocal.in)',
+          'Accept-Language': 'en-IN,en;q=0.9'
+        },
+        signal: controller.signal
+      }
+    );
     clearTimeout(timeout);
 
     if (nomRes.ok) {
       const nomData = await nomRes.json();
       const addr = nomData?.address || {};
 
-      let pin = (addr.postcode || '').replace(/\D/g, '').slice(0, 6);
-      const locality = addr.suburb || addr.residential || addr.neighbourhood || addr.city_district || addr.town || addr.city || addr.village || 'My Location';
-      const district = addr.state_district || addr.county || addr.city || '';
+      const rawPin = cleanIndianPin(addr.postcode);
+      const street = addr.road || addr.pedestrian || addr.building || addr.amenity || addr.shop || '';
+      const subLocality = addr.residential || addr.neighbourhood || addr.suburb || addr.village || addr.hamlet || '';
+      const mainLocality = addr.city_district || addr.town || addr.city || addr.municipality || '';
+      const district = addr.state_district || addr.county || addr.district || mainLocality || '';
       const state = addr.state || '';
+      const locality = buildDoorstepLocality(addr);
 
-      if (pin && pin.length === 6) {
-        const addresses = await fetchAllAddressesForPincode(pin);
-        return res.json({
-          success: true,
-          source: 'nominatim_gps',
-          pincode: pin,
-          locality,
-          district,
+      if (rawPin) {
+        const addresses = await fetchAllAddressesForPincode(rawPin);
+        if (addresses && addresses.length > 0) {
+          resolvedPincode = rawPin;
+          resolvedLocality = locality;
+          resolvedDistrict = district || addresses[0]?.district;
+          resolvedState = state || addresses[0]?.state;
+          resolvedAddresses = addresses;
+          resolutionSource = 'nominatim_doorstep_gps';
+        }
+      }
+
+      // If postcode was missing or unverified, search India Post via detected locality terms
+      if (!resolvedPincode && (subLocality || mainLocality || street)) {
+        const postalMatch = await resolvePinFromLocality(
+          [subLocality, mainLocality, street, district],
           state,
-          label: `${locality} (${pin})`,
-          coordinates: { lat, lng },
-          addresses: addresses.slice(0, 10),
-          count: addresses.length
-        });
+          district
+        );
+        if (postalMatch) {
+          resolvedPincode = postalMatch.pincode;
+          resolvedLocality = locality || postalMatch.matchedOffice.Name;
+          resolvedDistrict = district || postalMatch.matchedOffice.District;
+          resolvedState = state || postalMatch.matchedOffice.State;
+          resolvedAddresses = postalMatch.addresses;
+          resolutionSource = 'nominatim_postoffice_match';
+        }
       }
     }
-  } catch (err) {
-    console.warn('Nominatim reverse geocode error:', err.message);
+  } catch (nomErr) {
+    console.warn('Nominatim reverse geocode warning:', nomErr.message);
   }
 
-  // 3. Fallback to closest hub in India
-  const fallback = closestHub || PAN_INDIA_POPULAR_HUBS[0];
-  const addresses = await fetchAllAddressesForPincode(fallback.pincode);
-  res.json({
+  // 2. Tier 2: BigDataCloud Reverse Geocoding fallback
+  if (!resolvedPincode) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4500);
+
+      const bdcRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+
+      if (bdcRes.ok) {
+        const bdcData = await bdcRes.json();
+        const rawPin = cleanIndianPin(bdcData.postcode);
+        const bdcLocality = bdcData.locality || bdcData.city || '';
+        const bdcCity = bdcData.city || '';
+        const bdcState = bdcData.principalSubdivision || '';
+
+        const adminNames = (bdcData.localityInfo?.administrative || [])
+          .map((a) => a.name)
+          .filter((n) => n && n !== 'India' && n !== bdcState);
+
+        if (rawPin) {
+          const addresses = await fetchAllAddressesForPincode(rawPin);
+          if (addresses && addresses.length > 0) {
+            resolvedPincode = rawPin;
+            resolvedLocality = bdcLocality || addresses[0]?.name;
+            resolvedDistrict = bdcCity || addresses[0]?.district;
+            resolvedState = bdcState || addresses[0]?.state;
+            resolvedAddresses = addresses;
+            resolutionSource = 'bigdatacloud_gps';
+          }
+        }
+
+        if (!resolvedPincode) {
+          const searchTerms = [bdcLocality, bdcCity, ...adminNames];
+          const postalMatch = await resolvePinFromLocality(searchTerms, bdcState, bdcCity);
+          if (postalMatch) {
+            resolvedPincode = postalMatch.pincode;
+            resolvedLocality = bdcLocality || postalMatch.matchedOffice.Name;
+            resolvedDistrict = bdcCity || postalMatch.matchedOffice.District;
+            resolvedState = bdcState || postalMatch.matchedOffice.State;
+            resolvedAddresses = postalMatch.addresses;
+            resolutionSource = 'bigdatacloud_postoffice_match';
+          }
+        }
+      }
+    } catch (bdcErr) {
+      console.warn('BigDataCloud reverse geocode warning:', bdcErr.message);
+    }
+  }
+
+  // 3. Tier 3: Nearest Hub Fallback (Only used if external geocoding networks are unreachable)
+  if (!resolvedPincode) {
+    let closestHub = null;
+    let minDistance = Infinity;
+
+    for (const hub of PAN_INDIA_POPULAR_HUBS) {
+      if (hub.lat && hub.lng) {
+        const dist = getDistanceFromLatLonInKm(lat, lng, hub.lat, hub.lng);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestHub = hub;
+        }
+      }
+    }
+
+    const fallback = closestHub || PAN_INDIA_POPULAR_HUBS[0];
+    const addresses = await fetchAllAddressesForPincode(fallback.pincode);
+    resolvedPincode = fallback.pincode;
+    resolvedLocality = fallback.locality || fallback.name;
+    resolvedDistrict = fallback.district;
+    resolvedState = fallback.state;
+    resolvedAddresses = addresses;
+    resolutionSource = 'offline_nearest_hub_fallback';
+  }
+
+  const finalResult = {
     success: true,
-    source: 'nearest_hub_fallback',
-    pincode: fallback.pincode,
-    locality: fallback.locality || fallback.name,
-    district: fallback.district,
-    state: fallback.state,
-    label: `${fallback.locality || fallback.name} (${fallback.pincode})`,
+    source: resolutionSource,
+    pincode: resolvedPincode,
+    locality: resolvedLocality,
+    district: resolvedDistrict,
+    state: resolvedState,
+    label: `${resolvedLocality} (${resolvedPincode})`,
     coordinates: { lat, lng },
-    addresses: addresses.slice(0, 10),
-    count: addresses.length
-  });
+    accuracyMeters: accuracyMeters || null,
+    addresses: (resolvedAddresses || []).slice(0, 15),
+    count: (resolvedAddresses || []).length
+  };
+
+  if (resolutionSource !== 'offline_nearest_hub_fallback') {
+    pincodeCache.set(cacheKey, finalResult);
+  }
+
+  return res.json(finalResult);
 });
 
 export default router;

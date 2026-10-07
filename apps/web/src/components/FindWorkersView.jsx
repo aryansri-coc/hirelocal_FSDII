@@ -700,13 +700,19 @@ export default function FindWorkersView({
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const res = await api.reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Math.round(pos.coords.accuracy || 0);
+
+          const res = await api.reverseGeocode(lat, lng, accuracy);
           if (res && res.success && res.pincode) {
             const newLoc = {
               pincode: res.pincode,
               locality: res.locality || res.pincode,
               district: res.district || '',
               state: res.state || '',
+              coordinates: { lat, lng },
+              accuracy,
               label: `${res.locality || res.pincode} (${res.pincode})`
             };
             setSelectedLocState(newLoc);
@@ -726,7 +732,7 @@ export default function FindWorkersView({
           alert('GPS location unavailable. Please enter a 6-digit PINCODE.');
         }
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
 

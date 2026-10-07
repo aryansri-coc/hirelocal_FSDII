@@ -43,21 +43,30 @@ export default function LandingHeroSection({
     }
 
     setGpsLoading(true);
-    setGpsMessage('Asking for GPS permission...');
+    setGpsMessage('Requesting high-accuracy GPS coordinates...');
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        setGpsMessage('Finding your doorstep PINCODE & local area...');
+        const accuracy = Math.round(pos.coords.accuracy || 0);
+        setGpsMessage('Resolving doorstep PINCODE & local area...');
 
         try {
-          const res = await api.reverseGeocode(lat, lng);
+          const res = await api.reverseGeocode(lat, lng, accuracy);
           if (res && res.success && res.pincode) {
             setPincodeInput(res.pincode);
             const label = `${res.locality || res.district || 'Current Location'} (${res.pincode})`;
             setSelectedLoc(label);
-            setGpsMessage(`GPS Location detected: ${res.locality || ''} (${res.pincode})`);
+
+            let precisionTag = '';
+            if (accuracy > 0) {
+              if (accuracy <= 50) precisionTag = ` (GPS ±${accuracy}m)`;
+              else if (accuracy <= 500) precisionTag = ` (Local area ±${accuracy}m)`;
+              else precisionTag = ` (Estimated area ±${(accuracy / 1000).toFixed(1)}km)`;
+            }
+
+            setGpsMessage(`Detected: ${res.locality || ''} (${res.pincode})${precisionTag}`);
 
             if (onSelectLocation) {
               onSelectLocation({
@@ -65,12 +74,13 @@ export default function LandingHeroSection({
                 locality: res.locality || res.district || 'Current Location',
                 district: res.district || '',
                 state: res.state || '',
+                coordinates: { lat, lng },
                 label
               });
             }
 
             // Auto-clear message after 5s
-            setTimeout(() => setGpsMessage(''), 5000);
+            setTimeout(() => setGpsMessage(''), 6000);
           } else {
             setGpsMessage('Could not find Indian PINCODE for this coordinate.');
           }
@@ -91,7 +101,7 @@ export default function LandingHeroSection({
           setGpsMessage('GPS request timed out. Please try again.');
         }
       },
-      { timeout: 12000, enableHighAccuracy: true }
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
 

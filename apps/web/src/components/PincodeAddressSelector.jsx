@@ -37,20 +37,29 @@ export default function PincodeAddressSelector({
     }
 
     setGpsLoading(true);
-    setGpsStatus('Requesting GPS permission from browser...');
+    setGpsStatus('Requesting high-accuracy GPS coordinates...');
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        setGpsStatus('Finding your PINCODE & postal addresses...');
+        const accuracy = Math.round(pos.coords.accuracy || 0);
+        setGpsStatus('Resolving doorstep PINCODE & postal addresses...');
 
         try {
-          const res = await api.reverseGeocode(lat, lng);
+          const res = await api.reverseGeocode(lat, lng, accuracy);
           if (res && res.success && res.pincode) {
             setSearchInput(res.pincode);
             setActivePincode(res.pincode);
-            setGpsStatus(`GPS detected: ${res.locality || res.district || 'Location'} (${res.pincode})`);
+
+            let precisionTag = '';
+            if (accuracy > 0) {
+              if (accuracy <= 50) precisionTag = ` (GPS ±${accuracy}m)`;
+              else if (accuracy <= 500) precisionTag = ` (Local area ±${accuracy}m)`;
+              else precisionTag = ` (Estimated area ±${(accuracy / 1000).toFixed(1)}km)`;
+            }
+
+            setGpsStatus(`Detected: ${res.locality || res.district || 'Location'} (${res.pincode})${precisionTag}`);
 
             if (res.addresses && res.addresses.length > 0) {
               setAddresses(res.addresses);
@@ -80,7 +89,7 @@ export default function PincodeAddressSelector({
           setGpsStatus('GPS request timed out. Please try again or enter PINCODE.');
         }
       },
-      { timeout: 12000, enableHighAccuracy: true }
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
 
