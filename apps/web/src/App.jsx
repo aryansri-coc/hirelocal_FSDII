@@ -68,6 +68,9 @@ export default function App() {
   const [authModalState, setAuthModalState] = useState(null); // null | 'login' | 'signup'
   const [showWorkerOnboard, setShowWorkerOnboard] = useState(false);
   const [simulatorJob, setSimulatorJob] = useState(null);
+  const [showCallbotModal, setShowCallbotModal] = useState(false);
+  const [callbotInitialMode, setCallbotInitialMode] = useState('job_notification');
+
 
   // Set default view on authentication state changes
   useEffect(() => {
@@ -194,10 +197,16 @@ export default function App() {
     setBookingWorker(w);
   };
 
-  const handleOpenCallbotForJob = (job) => {
-    setSimulatorJob(job);
-    setActiveTab('callbot_info');
+  const handleOpenCallbot = (mode = 'job_notification', job = null) => {
+    setCallbotInitialMode(mode);
+    if (job) setSimulatorJob(job);
+    setShowCallbotModal(true);
   };
+
+  const handleOpenCallbotForJob = (job) => {
+    handleOpenCallbot('job_notification', job);
+  };
+
 
   if (loading) {
     return (
@@ -239,6 +248,7 @@ export default function App() {
         onOpenLogin={() => setAuthModalState('login')}
         onOpenSignup={() => setAuthModalState('signup')}
         onOpenWorkerOnboard={() => setShowWorkerOnboard(true)}
+        onOpenCallbot={handleOpenCallbot}
         selectedCity={selectedCity}
         selectedLocation={selectedLocation}
         onSelectLocation={handleSelectLocation}
@@ -265,12 +275,9 @@ export default function App() {
               }}
               onSelectWorker={(w) => setSelectedWorkerDetail(w)}
               onBookWorker={(w) => handleBookWorker(w)}
-              onOpenCallbot={() => {
-                setSelectedService('Electrician');
-                setActiveTab('explore');
-                fetchWorkers('Electrician');
-              }}
+              onOpenCallbot={(mode) => handleOpenCallbot(mode || 'job_notification')}
               workers={workers}
+
               services={services}
               selectedLocation={selectedLocation}
               onSelectLocation={handleSelectLocation}
@@ -423,7 +430,17 @@ export default function App() {
         />
       )}
 
+      {showCallbotModal && (
+        <CallBotSimulator
+          isModal
+          onClose={() => setShowCallbotModal(false)}
+          preselectedJob={simulatorJob}
+          initialMode={callbotInitialMode}
+        />
+      )}
+
       <Toast />
     </div>
   );
 }
+

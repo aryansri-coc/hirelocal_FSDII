@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
-import { Check, ChevronRight, X, PhoneCall, Smartphone } from 'lucide-react';
+import { Check, ChevronRight, X, PhoneCall, Smartphone, Sparkles, Loader2, CheckCircle } from 'lucide-react';
+import PincodeAddressSelector from './PincodeAddressSelector';
+import { lookupPincodeDefaultAddress } from '../utils/pincodeHelper';
 
 const ONBOARD_STEPS = [
   'Basic Info',
@@ -23,8 +25,6 @@ const PROFESSIONS = [
   'Appliance Repair'
 ];
 
-import PincodeAddressSelector from './PincodeAddressSelector';
-
 export default function WorkerOnboardingModal({ onClose, onSuccess }) {
   const { user, login, showToast, refreshUser } = useAuth();
 
@@ -39,6 +39,41 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
   const [showPincodeSelector, setShowPincodeSelector] = useState(false);
   const [address, setAddress] = useState(user?.address || 'MP Nagar');
   const [city, setCity] = useState('Bhopal');
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [addressAutoFilled, setAddressAutoFilled] = useState(false);
+  const [resolvedPincodeData, setResolvedPincodeData] = useState(null);
+
+  const handlePincodeChange = async (val) => {
+    const cleanPin = String(val || '').replace(/\D/g, '').slice(0, 6);
+    setPincode(cleanPin);
+
+    if (cleanPin.length === 6) {
+      setPincodeLoading(true);
+      try {
+        const resolved = await lookupPincodeDefaultAddress(cleanPin);
+        if (resolved) {
+          const distState = [resolved.district, resolved.state].filter(Boolean).join(', ');
+          setCity(distState || 'India');
+          setAddress(resolved.locality || resolved.defaultAddress);
+          setResolvedPincodeData(resolved);
+          setAddressAutoFilled(true);
+          showToast(`Auto-detected address for PINCODE ${cleanPin}: ${resolved.defaultAddress}`, 'info');
+        }
+      } catch (err) {
+        console.warn('Failed to resolve onboarding pincode address:', err);
+      } finally {
+        setPincodeLoading(false);
+      }
+    } else {
+      setAddressAutoFilled(false);
+    }
+  };
+
+  const handleSelectSubLocality = (locName) => {
+    setAddress(locName);
+    setAddressAutoFilled(true);
+    showToast(`Selected postal locality: ${locName}`, 'info');
+  };
 
   const [profession, setProfession] = useState('Electrician');
   const [experience, setExperience] = useState(5);
@@ -279,16 +314,23 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    style={{ width: '120px', fontFamily: 'monospace', fontWeight: 600 }}
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    placeholder="PINCODE"
-                    maxLength={6}
-                  />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ position: 'relative', width: '130px' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ width: '100%', fontFamily: 'monospace', fontWeight: 700 }}
+                      value={pincode}
+                      onChange={(e) => handlePincodeChange(e.target.value)}
+                      placeholder="PINCODE"
+                      maxLength={6}
+                    />
+                    {pincodeLoading && (
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }}>
+                        <Loader2 size={13} className="spin" />
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     className="form-input"
@@ -298,6 +340,41 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
                     placeholder="City / District"
                   />
                 </div>
+
+                {addressAutoFilled && (
+                  <div style={{ marginTop: '6px', fontSize: '11px', color: '#166534', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle size={12} /> Auto-filled address for PINCODE {pincode}
+                  </div>
+                )}
+
+                {/* Sub-localities under this PINCODE */}
+                {resolvedPincodeData?.localities?.length > 1 && (
+                  <div style={{ marginTop: '8px', padding: '8px 10px', backgroundColor: 'var(--surface-alt)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '4px' }}>
+                      Postal Localities in {pincode}:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {resolvedPincodeData.localities.slice(0, 6).map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => handleSelectSubLocality(loc)}
+                          style={{
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            borderRadius: '4px',
+                            border: `1px solid ${address.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--border)'}`,
+                            backgroundColor: address.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary-light)' : '#FFFFFF',
+                            color: address.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--text-main)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -305,7 +382,10 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
                 <input
                   className="form-input"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    setAddressAutoFilled(false);
+                  }}
                   placeholder="Colony, Street, Landmark"
                 />
               </div>

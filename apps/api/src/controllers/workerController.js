@@ -418,10 +418,7 @@ export async function updateWorkerProfile(req, res, next) {
 
     // Handle permanent pincode, location, and service radius updates
     const newPincode = (updates.pincode || (updates.location && updates.location.pincode) || worker.pincode || worker.location?.pincode || '462011').toString().trim();
-    const newLocationName = (updates.location_name || (updates.location && updates.location.name) || worker.location_name || worker.location?.name || 'Local Area').toString().trim();
-
-    cleanUpdates.pincode = newPincode;
-    cleanUpdates.location_name = newLocationName;
+    let newLocationName = (updates.location_name || (updates.location && updates.location.name) || worker.location_name || worker.location?.name || '').toString().trim();
 
     if (updates.service_radius !== undefined) {
       cleanUpdates.service_radius = Math.max(1, Math.min(100, Number(updates.service_radius) || 15));
@@ -438,10 +435,20 @@ export async function updateWorkerProfile(req, res, next) {
           lat = resolved.lat;
           lng = resolved.lng;
         }
+        if (!newLocationName && resolved && resolved.locality) {
+          newLocationName = resolved.district ? `${resolved.locality}, ${resolved.district}` : resolved.locality;
+        }
       } catch (e) {
         // Fallback to existing coordinates
       }
     }
+
+    if (!newLocationName) {
+      newLocationName = `${newPincode} Postal Hub`;
+    }
+
+    cleanUpdates.pincode = newPincode;
+    cleanUpdates.location_name = newLocationName;
 
     cleanUpdates.location = {
       name: newLocationName,

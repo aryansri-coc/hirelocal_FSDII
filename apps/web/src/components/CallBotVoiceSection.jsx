@@ -385,24 +385,65 @@ export default function CallBotVoiceSection({ onOpenCallbot }) {
             {/* Action Bar */}
             {onOpenCallbot && (
               <div style={{ marginTop: '24px' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={onOpenCallbot}
-                  style={{
-                    padding: '0 26px',
-                    height: '46px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontWeight: 700,
-                    boxShadow: '0 6px 18px -4px rgba(244, 91, 10, 0.35)'
-                  }}
-                >
-                  <PhoneCall size={16} />
-                  <span>Try Voice CallBot Demo</span>
-                  <ArrowRight size={15} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => onOpenCallbot('job_notification')}
+                    style={{
+                      padding: '0 26px',
+                      height: '46px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontWeight: 700,
+                      boxShadow: '0 6px 18px -4px rgba(244, 91, 10, 0.35)'
+                    }}
+                  >
+                    <PhoneCall size={16} />
+                    <span>Try Voice CallBot Demo</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+
+                {/* Direct Scenario Jump Pills */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                    Direct Scenarios:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCallbot('registration')}
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#16A34A',
+                      backgroundColor: '#EAF8EF',
+                      border: '1px solid #BBF7D0',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🔨 Non-Smartphone Worker Registration
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCallbot('customer_order')}
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#7C3AED',
+                      backgroundColor: '#F5F3FF',
+                      border: '1px solid #DDD6FE',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    👤 Customer Order Confirmation
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -411,6 +452,8 @@ export default function CallBotVoiceSection({ onOpenCallbot }) {
           <div className="hl-callbot-preview">
             <div 
               className="hl-video-container"
+              onClick={() => onOpenCallbot && onOpenCallbot('job_notification')}
+              title="Click to Launch Live Voice CallBot Demo"
               style={{
                 position: 'relative',
                 width: '100%',
@@ -421,11 +464,13 @@ export default function CallBotVoiceSection({ onOpenCallbot }) {
                 boxShadow: '0 24px 50px -12px rgba(21, 26, 36, 0.18), 0 0 0 1px var(--border)',
                 display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center'
+                alignItems: 'center',
+                cursor: 'pointer'
               }}
             >
               <video
                 src="/callbot_voice_feature.mp4"
+                poster="/keypad_phone_callbot.png"
                 autoPlay
                 loop
                 muted
@@ -437,8 +482,28 @@ export default function CallBotVoiceSection({ onOpenCallbot }) {
                   display: 'block'
                 }}
               />
+              {/* Click-to-launch pill */}
+              <div style={{
+                position: 'absolute',
+                bottom: '16px',
+                backgroundColor: 'rgba(21, 26, 36, 0.85)',
+                color: '#FFFFFF',
+                backdropFilter: 'blur(6px)',
+                padding: '8px 16px',
+                borderRadius: '30px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+              }}>
+                <PhoneCall size={13} style={{ color: '#F45B0A' }} />
+                <span>Click to Test Voice CallBot Demo</span>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 

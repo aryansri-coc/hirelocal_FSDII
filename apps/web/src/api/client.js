@@ -101,10 +101,23 @@ export const api = {
   // CallBot (Section 25 & 29)
   startCallSession: (payload) =>
     apiRequest('/callbot/session/start', { method: 'POST', body: JSON.stringify(payload) }),
+  stepCallSession: (payload) =>
+    apiRequest('/callbot/session/step', { method: 'POST', body: JSON.stringify(payload) }),
   processCallStep: (payload) =>
     apiRequest('/callbot/session/step', { method: 'POST', body: JSON.stringify(payload) }),
   getCallLogs: () =>
     apiRequest('/callbot/logs'),
+
+  // Bhashini AI (MeitY Government of India)
+  getBhashiniStatus: () =>
+    apiRequest('/callbot/bhashini/status'),
+  synthesizeBhashini: (payload) =>
+    apiRequest('/callbot/bhashini/tts', { method: 'POST', body: JSON.stringify(payload) }),
+  transcribeBhashini: (payload) =>
+    apiRequest('/callbot/bhashini/asr', { method: 'POST', body: JSON.stringify(payload) }),
+  translateBhashini: (payload) =>
+    apiRequest('/callbot/bhashini/translate', { method: 'POST', body: JSON.stringify(payload) }),
+
 
   // Admin (Section 20 - 27)
   getAdminMetrics: () =>

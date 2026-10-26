@@ -6,6 +6,8 @@ import {
   updateWorkerReliabilityOnCancellation
 } from '../../../../packages/services/reliabilityCalculator.js';
 import { getAlternativeWorkers } from '../../../../packages/services/matchingEngine.js';
+import { triggerJobOfferCall } from '../services/telephonyService.js';
+
 
 export async function createJob(req, res, next) {
   try {
@@ -112,34 +114,15 @@ export async function createJob(req, res, next) {
 
       // If worker is non-smartphone, initiate CallBot outbound session immediately
       if (selectedWorker.communication_type === 'non_smartphone') {
-        const callId = `call_${Date.now()}`;
-        const logRecord = {
-          call_id: callId,
-          worker_id: selectedWorker.worker_id,
-          job_id: jobId,
-          call_type: 'job_notification',
-          language: selectedWorker.language || 'hi',
-          start_time: new Date().toISOString(),
-          duration: 0,
-          response: 'PENDING',
+        const dispatchResult = await triggerJobOfferCall(newJob, selectedWorker);
+        callbotSession = {
+          call_id: dispatchResult?.sessionId,
           status: 'queued',
-          metadata: `Outbound AI CallBot triggered for job #${jobId}`,
-          created_at: new Date().toISOString()
+          worker_phone: selectedWorker.phone
         };
-        db.insert('call_logs', logRecord);
-        callbotSession = { call_id: callId, status: 'queued' };
-
-        db.addAuditLog({
-          actorId: 'system',
-          actorName: 'AI CallBot Gateway',
-          action: 'CALLBOT_STARTED',
-          entityType: 'callbot',
-          entityId: callId,
-          source: 'callbot',
-          metadata: { worker_id: selectedWorker.worker_id, job_id: jobId, language: logRecord.language }
-        });
       }
     }
+
 
     return res.status(201).json({
       success: true,

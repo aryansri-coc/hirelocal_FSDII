@@ -152,9 +152,11 @@
       "language": "hi",
       "location": {
         "name": "MP Nagar, Bhopal",
+        "pincode": "462011",
         "lat": 23.2332,
         "lng": 77.4343
       },
+      "pincode": "462011",
       "service_radius": 20,
       "communication_type": "smartphone",
       "rating": 4.8,
@@ -177,9 +179,11 @@
       "language": "hi",
       "location": {
         "name": "Kolar Road, Bhopal",
+        "pincode": "462042",
         "lat": 23.1865,
         "lng": 77.4243
       },
+      "pincode": "462042",
       "service_radius": 25,
       "communication_type": "non_smartphone",
       "rating": 4.7,
@@ -202,9 +206,11 @@
       "language": "hi",
       "location": {
         "name": "Govindpura, Bhopal",
+        "pincode": "462023",
         "lat": 23.2599,
         "lng": 77.4646
       },
+      "pincode": "462023",
       "service_radius": 25,
       "communication_type": "non_smartphone",
       "rating": 4.9,
@@ -227,9 +233,11 @@
       "language": "en",
       "location": {
         "name": "Shahpura, Bhopal",
+        "pincode": "462039",
         "lat": 23.1973,
         "lng": 77.4337
       },
+      "pincode": "462039",
       "service_radius": 15,
       "communication_type": "smartphone",
       "rating": 4.5,
@@ -252,9 +260,11 @@
       "language": "hi",
       "location": {
         "name": "Ashoka Garden, Bhopal",
+        "pincode": "462023",
         "lat": 23.2647,
         "lng": 77.4287
       },
+      "pincode": "462023",
       "service_radius": 18,
       "communication_type": "smartphone",
       "rating": 4.2,
@@ -277,9 +287,11 @@
       "language": "hi",
       "location": {
         "name": "Arera Hills, Bhopal",
+        "pincode": "462016",
         "lat": 23.2384,
         "lng": 77.4116
       },
+      "pincode": "462016",
       "service_radius": 20,
       "communication_type": "non_smartphone",
       "rating": 5.0,
@@ -302,9 +314,11 @@
       "language": "hi",
       "location": {
         "name": "Nehru Nagar, Bhopal",
+        "pincode": "462003",
         "lat": 23.2100,
         "lng": 77.3872
       },
+      "pincode": "462003",
       "service_radius": 20,
       "communication_type": "smartphone",
       "rating": 4.6,

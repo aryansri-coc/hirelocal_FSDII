@@ -27,8 +27,10 @@ import {
   Building2,
   ShieldCheck,
   Save,
-  Radio
+  Radio,
+  Loader2
 } from 'lucide-react';
+import { lookupPincodeDefaultAddress } from '../utils/pincodeHelper';
 
 export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
   const { user, worker, showToast, refreshUser } = useAuth();
@@ -48,10 +50,10 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
 
   // Permanent Location & Working Area state
   const [pincodeVal, setPincodeVal] = useState(
-    worker?.pincode || worker?.location?.pincode || user?.pincode || '140413'
+    worker?.pincode || worker?.location?.pincode || user?.pincode || '462016'
   );
   const [locationNameVal, setLocationNameVal] = useState(
-    worker?.location?.name || worker?.location_name || user?.address || 'Bajheri, Punjab'
+    worker?.location?.name || worker?.location_name || user?.address || 'Arera Hills, Bhopal'
   );
   const [serviceRadiusVal, setServiceRadiusVal] = useState(
     worker?.service_radius || 15
@@ -59,6 +61,9 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
   const [showPincodeSelector, setShowPincodeSelector] = useState(false);
   const [showOverviewEditor, setShowOverviewEditor] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [addressAutoFilled, setAddressAutoFilled] = useState(false);
+  const [resolvedPincodeData, setResolvedPincodeData] = useState(null);
 
   const fetchWorkerData = async () => {
     setLoading(true);
@@ -187,8 +192,69 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
     const fullLoc = districtState ? `${locName}, ${districtState}` : locName;
     setPincodeVal(pin);
     setLocationNameVal(fullLoc);
+    setAddressAutoFilled(true);
     setShowPincodeSelector(false);
     showToast(`Selected ${fullLoc} (${pin}). Click Save to apply changes.`, 'info');
+  };
+
+  /**
+   * Automatically look up and write down the default address regarding the worker's PINCODE
+   */
+  const handlePincodeChange = async (newVal, shouldAutoFill = true) => {
+    const cleanPin = String(newVal || '').replace(/\D/g, '').slice(0, 6);
+    setPincodeVal(cleanPin);
+
+    if (cleanPin.length === 6 && shouldAutoFill) {
+      setPincodeLoading(true);
+      try {
+        const resolved = await lookupPincodeDefaultAddress(cleanPin);
+        if (resolved && resolved.defaultAddress) {
+          setLocationNameVal(resolved.defaultAddress);
+          setResolvedPincodeData(resolved);
+          setAddressAutoFilled(true);
+          showToast(`Auto-detected default address: ${resolved.defaultAddress}`, 'info');
+        }
+      } catch (err) {
+        console.warn('Failed to resolve pincode address:', err);
+      } finally {
+        setPincodeLoading(false);
+      }
+    } else if (cleanPin.length < 6) {
+      setAddressAutoFilled(false);
+    }
+  };
+
+  const handleSelectSubLocality = (locName) => {
+    if (!resolvedPincodeData) {
+      setLocationNameVal(locName);
+      return;
+    }
+    const districtState = [resolvedPincodeData.district, resolvedPincodeData.state].filter(Boolean).join(', ');
+    const full = districtState ? `${locName}, ${districtState}` : locName;
+    setLocationNameVal(full);
+    setAddressAutoFilled(true);
+    showToast(`Selected postal locality: ${full}`, 'info');
+  };
+
+  const handleAutoFillCurrentPincode = async () => {
+    if (!pincodeVal || pincodeVal.length !== 6) {
+      showToast('Please enter a 6-digit PINCODE first', 'warning');
+      return;
+    }
+    setPincodeLoading(true);
+    try {
+      const resolved = await lookupPincodeDefaultAddress(pincodeVal);
+      if (resolved && resolved.defaultAddress) {
+        setLocationNameVal(resolved.defaultAddress);
+        setResolvedPincodeData(resolved);
+        setAddressAutoFilled(true);
+        showToast(`Auto-filled address: ${resolved.defaultAddress}`, 'success');
+      }
+    } catch (err) {
+      showToast('Could not resolve PINCODE address', 'danger');
+    } finally {
+      setPincodeLoading(false);
+    }
   };
 
   const toggleDay = (day) => {
@@ -503,14 +569,21 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                        Base Postal PINCODE (6 Digits)
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          Base Postal PINCODE (6 Digits)
+                        </label>
+                        {pincodeLoading && (
+                          <span style={{ fontSize: '11px', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Loader2 size={11} className="spin" /> Looking up...
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         className="form-input"
                         value={pincodeVal}
-                        onChange={(e) => setPincodeVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        onChange={(e) => handlePincodeChange(e.target.value)}
                         placeholder="e.g. 140413"
                         maxLength={6}
                         style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '14px' }}
@@ -518,15 +591,25 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                        Locality / Village / Town Name
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          Locality / Village / Town Name
+                        </label>
+                        {addressAutoFilled && (
+                          <span style={{ fontSize: '11px', color: '#166534', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <CheckCircle size={11} /> Auto-filled from PINCODE
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         className="form-input"
                         value={locationNameVal}
-                        onChange={(e) => setLocationNameVal(e.target.value)}
-                        placeholder="e.g. Bajheri, Punjab"
+                        onChange={(e) => {
+                          setLocationNameVal(e.target.value);
+                          setAddressAutoFilled(false);
+                        }}
+                        placeholder="e.g. Bajheri, Mohali, Punjab"
                       />
                     </div>
 
@@ -550,6 +633,75 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Postal Localities chip suggestions under this PINCODE */}
+                  {resolvedPincodeData?.localities?.length > 1 && (
+                    <div style={{ backgroundColor: 'var(--surface-alt)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                        Postal hubs in PINCODE {pincodeVal} (Click to select specific locality):
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {resolvedPincodeData.localities.slice(0, 8).map((loc) => (
+                          <button
+                            key={loc}
+                            type="button"
+                            onClick={() => handleSelectSubLocality(loc)}
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 700 : 500,
+                              backgroundColor: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary-light)' : '#FFFFFF',
+                              color: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--text-main)',
+                              border: `1px solid ${locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--border)'}`,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {loc}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 1-Click Auto-fill trigger if PINCODE is 6 digits but not yet auto-synced */}
+                  {pincodeVal && pincodeVal.length === 6 && !addressAutoFilled && (
+                    <div style={{
+                      backgroundColor: 'rgba(234, 88, 12, 0.05)',
+                      border: '1px dashed var(--primary)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      fontSize: '12px'
+                    }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        PINCODE provided: <strong>{pincodeVal}</strong>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAutoFillCurrentPincode}
+                        disabled={pincodeLoading}
+                        style={{
+                          background: 'var(--primary)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Sparkles size={11} /> Auto-fill Address for {pincodeVal}
+                      </button>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', alignItems: 'center' }}>
                     <button
@@ -913,16 +1065,23 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700 }}>
-                    Base PINCODE
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ fontWeight: 700, margin: 0 }}>
+                      Base PINCODE
+                    </label>
+                    {pincodeLoading && (
+                      <span style={{ fontSize: '11px', color: 'var(--primary)' }}>
+                        <Loader2 size={11} className="spin" />
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     className="form-input"
                     value={pincodeVal}
-                    onChange={(e) => setPincodeVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
                     placeholder="6 Digits"
                     maxLength={6}
                     style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, textAlign: 'center' }}
@@ -930,18 +1089,97 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700 }}>
-                    Locality / Town / Landmark
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ fontWeight: 700, margin: 0 }}>
+                      Locality / Town / Landmark
+                    </label>
+                    {addressAutoFilled && (
+                      <span style={{ fontSize: '11px', color: '#166534', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle size={11} /> Auto-filled from PINCODE
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     className="form-input"
                     value={locationNameVal}
-                    onChange={(e) => setLocationNameVal(e.target.value)}
-                    placeholder="e.g. Bajheri, SAS Nagar / MP Nagar Zone 2"
+                    onChange={(e) => {
+                      setLocationNameVal(e.target.value);
+                      setAddressAutoFilled(false);
+                    }}
+                    placeholder="e.g. Bajheri, Mohali / MP Nagar"
                   />
                 </div>
               </div>
+
+              {/* Area Tab Sub-Localities and 1-Click Auto-fill */}
+              {resolvedPincodeData?.localities?.length > 1 && (
+                <div style={{ backgroundColor: 'var(--surface-alt)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                    Postal Hubs in PINCODE {pincodeVal} (Click to set):
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {resolvedPincodeData.localities.slice(0, 8).map((loc) => (
+                      <button
+                        key={loc}
+                        type="button"
+                        onClick={() => handleSelectSubLocality(loc)}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 700 : 500,
+                          backgroundColor: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary-light)' : '#FFFFFF',
+                          color: locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--text-main)',
+                          border: `1px solid ${locationNameVal.toLowerCase().includes(loc.toLowerCase()) ? 'var(--primary)' : 'var(--border)'}`,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {pincodeVal && pincodeVal.length === 6 && !addressAutoFilled && (
+                <div style={{
+                  backgroundColor: 'rgba(234, 88, 12, 0.05)',
+                  border: '1px dashed var(--primary)',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  fontSize: '12px',
+                  marginBottom: '16px'
+                }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    PINCODE: <strong>{pincodeVal}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAutoFillCurrentPincode}
+                    disabled={pincodeLoading}
+                    style={{
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Sparkles size={11} /> Auto-fill Address for {pincodeVal}
+                  </button>
+                </div>
+              )}
 
               {/* SERVICE RADIUS / COVERAGE SECTION */}
               <div style={{
@@ -1226,22 +1464,35 @@ export default function WorkerDashboard({ activeSubView = 'dashboard' }) {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px', marginBottom: '14px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>PINCODE</label>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', fontWeight: 600 }}>
+                      <span>PINCODE</span>
+                      {pincodeLoading && <Loader2 size={10} className="spin" style={{ color: 'var(--primary)' }} />}
+                    </label>
                     <input
                       className="form-input"
                       value={pincodeVal}
-                      onChange={(e) => setPincodeVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) => handlePincodeChange(e.target.value)}
                       placeholder="6 Digits"
                       maxLength={6}
                       style={{ fontFamily: 'monospace', fontWeight: 700 }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Base Locality / Area</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>Base Locality / Area</label>
+                      {addressAutoFilled && (
+                        <span style={{ fontSize: '10px', color: '#166534', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                          <CheckCircle size={10} /> Auto-filled
+                        </span>
+                      )}
+                    </div>
                     <input
                       className="form-input"
                       value={locationNameVal}
-                      onChange={(e) => setLocationNameVal(e.target.value)}
+                      onChange={(e) => {
+                        setLocationNameVal(e.target.value);
+                        setAddressAutoFilled(false);
+                      }}
                       placeholder="e.g. Bajheri / MP Nagar"
                     />
                   </div>

@@ -28,6 +28,7 @@ const PAN_INDIA_POPULAR_HUBS = [
 
 // Verified coordinates dictionary for instant sub-millisecond mapping
 const PINCODE_COORDINATES = {
+  '140413': { lat: 30.7516, lng: 76.5912, locality: 'Bajheri', district: 'Mohali', state: 'Punjab' },
   '824101': { lat: 24.7538, lng: 84.3736, locality: 'Aurangabad', district: 'Aurangabad (BH)', state: 'Bihar' },
   '143410': { lat: 31.3256, lng: 74.9213, locality: 'Dadeha Sahib / Sarhali', district: 'Amritsar / Tarn Taran', state: 'Punjab' },
   '462011': { lat: 23.2332, lng: 77.4343, locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh' },
@@ -162,6 +163,14 @@ export async function getCoordinatesForPincode(pin, addresses = []) {
 
 // Rich fallback addresses for key hubs if Postal API is temporarily slow or rate limited
 const PINCODE_LOCAL_FALLBACKS = {
+  '140413': [
+    { name: 'Bajheri', block: 'Ropar', district: 'Mohali', state: 'Punjab', pincode: '140413', branchType: 'Branch Post Office', deliveryStatus: 'Delivery' },
+    { name: 'Gharuan', block: 'Kharar', district: 'Rupnagar', state: 'Punjab', pincode: '140413', branchType: 'Sub Post Office', deliveryStatus: 'Delivery' },
+    { name: 'Bassian Brahman', block: 'Kharar', district: 'Rupnagar', state: 'Punjab', pincode: '140413', branchType: 'Branch Post Office', deliveryStatus: 'Delivery' },
+    { name: 'Garangan', block: 'Kharar', district: 'Rupnagar', state: 'Punjab', pincode: '140413', branchType: 'Branch Post Office', deliveryStatus: 'Delivery' },
+    { name: 'Marauli Kalan', block: 'Ropar', district: 'Mohali', state: 'Punjab', pincode: '140413', branchType: 'Branch Post Office', deliveryStatus: 'Delivery' },
+    { name: 'Sakrulapur', block: 'Ropar', district: 'Mohali', state: 'Punjab', pincode: '140413', branchType: 'Branch Post Office', deliveryStatus: 'Delivery' }
+  ],
   '824101': [
     { name: 'Aurangabad (BH)', block: 'Aurangabad', district: 'Aurangabad(BH)', state: 'Bihar', pincode: '824101', branchType: 'Head Post Office', deliveryStatus: 'Delivery' },
     { name: 'Aurangabad Kutchehry', block: 'Aurangabad', district: 'Aurangabad(BH)', state: 'Bihar', pincode: '824101', branchType: 'Sub Post Office', deliveryStatus: 'Delivery' }

@@ -17,7 +17,8 @@ import {
   MessageSquare,
   LayoutDashboard,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  PhoneCall
 } from 'lucide-react';
 
 export default function Navbar({
@@ -26,11 +27,13 @@ export default function Navbar({
   onOpenLogin,
   onOpenSignup,
   onOpenWorkerOnboard,
+  onOpenCallbot,
   selectedCity = 'Bhopal',
   onSelectCity,
   selectedLocation,
   onSelectLocation
 }) {
+
   const {
     user,
     worker,
@@ -196,8 +199,21 @@ export default function Navbar({
                 >
                   Services
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenCallbot) onOpenCallbot('job_notification');
+                    else scrollToSection('voice-callbot-section');
+                  }}
+                  className="hl-nav-link"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <PhoneCall size={13} style={{ color: 'var(--primary)' }} />
+                  <span>AI CallBot</span>
+                </button>
               </>
             )}
+
 
             {/* Customer Links */}
             {isAuthenticated && role === 'customer' && (
@@ -637,6 +653,22 @@ export default function Navbar({
               >
                 <span>How It Works</span>
               </button>
+
+              <button
+                type="button"
+                className="hl-mobile-nav-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenCallbot) onOpenCallbot('job_notification');
+                  else scrollToSection('voice-callbot-section');
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <PhoneCall size={14} style={{ color: 'var(--primary)' }} />
+                  AI CallBot Voice Demo
+                </span>
+              </button>
+
 
               {isAuthenticated && role === 'customer' && (
                 <>
