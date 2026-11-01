@@ -26,8 +26,8 @@ jobs:
           node-version: 22.x
           cache: 'npm'
 
-      - name: Install Monorepo Dependencies
-        run: npm ci
+      - name: Install Dependencies
+        run: npm install
 
       - name: Run Test Suite (9 Suites, 43 Tests)
         run: npm test
@@ -49,10 +49,8 @@ jobs:
           node-version: 22.x
           cache: 'npm'
 
-      - name: Install Dependencies & Linux Native Binaries
-        run: |
-          npm ci
-          npm --prefix apps/web install @rollup/rollup-linux-x64-gnu@4.63.4 @esbuild/linux-x64@0.21.5 --no-save
+      - name: Install Dependencies
+        run: npm install
 
       - name: Build Web Application (Vite)
         run: npm run build
