@@ -161,6 +161,7 @@ export async function registerAsWorker(req, res, next) {
       experience = 1,
       bio,
       city = 'Bhopal',
+      address,
       location_name,
       service_radius = 15,
       working_days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],

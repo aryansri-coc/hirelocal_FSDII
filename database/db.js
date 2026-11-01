@@ -18,7 +18,7 @@ const SEED_FILE = path.resolve(__dirname, 'seed', 'seedData.json');
 
 class DatabaseStore {
   constructor() {
-    this.isPostgres = process.env.DB_CLIENT === 'postgres' || !!process.env.DATABASE_URL;
+    this.isPostgres = (process.env.DB_CLIENT === 'postgres' || !!process.env.DATABASE_URL) && process.env.NODE_ENV !== 'test';
     this.data = {
       users: [],
       service_categories: [],

@@ -62,26 +62,26 @@ export function parseIntent(input, currentState = null) {
   }
 
   // Voice / Natural language keyword matching in Hindi, Marathi, and English
-  // Accept / Confirm: haan, yes, karunga, theek hai, accept, bilkul, pakka, ha, okay, confirm, aunga, ho jayega
-  if (/^(haan|ha|yes|accept|theek hai|karunga|ho jayega|bilkul|ok|okay|le lunga|aunga|aa jaunga|pakka|confirm|sahi hai|hoel)$/i.test(str) ||
-      str.includes('haan') || str.includes('accept') || str.includes('theek hai') || str.includes('yes') || str.includes('confirm') || str.includes('sahi hai')) {
+  // Accept / Confirm: haan, yes, karunga, theek hai, accept, bilkul, pakka, ha, okay, confirm, aunga, ho jayega, हाँ, स्वीकार, बिल्कुल
+  if (/^(haan|ha|yes|accept|theek hai|karunga|ho jayega|bilkul|ok|okay|le lunga|aunga|aa jaunga|pakka|confirm|sahi hai|hoel|हाँ|हा|स्वीकार|बिल्कुल|ठीक है)$/i.test(str) ||
+      str.includes('haan') || str.includes('accept') || str.includes('theek hai') || str.includes('yes') || str.includes('confirm') || str.includes('sahi hai') || str.includes('bilkul') || str.includes('हाँ') || str.includes('स्वीकार') || str.includes('बिल्कुल')) {
     return { intent: CALLBOT_INTENTS.ACCEPT, raw: input, confidence: 0.95 };
   }
 
-  // Reject / Cancel: nahi, no, reject, nahi hoga, busy hoon, cancel, na, nahi jam raha, radd, band karo
-  if (/^(nahi|no|reject|nahi hoga|busy|na|cancel|nahi karunga|nahi aunga|radd|nako|vaddu)$/i.test(str) ||
-      str.includes('nahi') || str.includes('reject') || str.includes('busy') || str.includes('no') || str.includes('cancel') || str.includes('radd')) {
+  // Reject / Cancel: nahi, no, reject, decline, nahi hoga, busy hoon, cancel, na, nahi jam raha, radd, band karo, नहीं, ना, अस्वीकार
+  if (/^(nahi|no|reject|decline|nahi hoga|busy|na|cancel|nahi karunga|nahi aunga|radd|nako|vaddu|नहीं|ना|अस्वीकार|रद्द)$/i.test(str) ||
+      str.includes('nahi') || str.includes('reject') || str.includes('decline') || str.includes('busy') || str.includes('no') || str.includes('cancel') || str.includes('radd') || str.includes('नहीं') || str.includes('अस्वीकार')) {
     return { intent: CALLBOT_INTENTS.REJECT, raw: input, confidence: 0.95 };
   }
 
-  // Repeat: repeat, dobara, fir se, sunao, again, ek baar aur
-  if (/^(repeat|dobara|fir se|phir se|again|sunao|punha)$/i.test(str) ||
-      str.includes('dobara') || str.includes('repeat') || str.includes('fir se') || str.includes('phir se') || str.includes('sunao')) {
+  // Repeat: repeat, dobara, fir se, sunao, again, ek baar aur, दोबारा, फिर से
+  if (/^(repeat|dobara|fir se|phir se|again|sunao|punha|दोबारा|फिर से)$/i.test(str) ||
+      str.includes('dobara') || str.includes('repeat') || str.includes('fir se') || str.includes('phir se') || str.includes('sunao') || str.includes('दोबारा') || str.includes('फिर से')) {
     return { intent: CALLBOT_INTENTS.REPEAT, raw: input, confidence: 0.95 };
   }
 
-  // Help: madad, help, operator, customer care, sahayata
-  if (/^(help|madad|sahayata|operator|madath)$/i.test(str) || str.includes('help') || str.includes('madad') || str.includes('operator')) {
+  // Help: madad, help, operator, customer care, sahayata, मदद, सहायता
+  if (/^(help|madad|sahayata|operator|madath|मदद|सहायता)$/i.test(str) || str.includes('help') || str.includes('madad') || str.includes('operator') || str.includes('मदद') || str.includes('सहायता')) {
     return { intent: CALLBOT_INTENTS.HELP, raw: input, confidence: 0.95 };
   }
 

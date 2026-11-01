@@ -145,3 +145,37 @@ Starts both the Backend API (`http://localhost:5000`) and Vite Frontend (`http:/
 ### Test 4: Admin Oversight & Audit Trail
 1. Log in as an administrator (or toggle demo mode to switch to *Admin Officer*).
 2. Inspect the **Users**, **Workers**, **Jobs**, **CallBot Center**, and **Audit Logs** tabs to review live metrics and logs.
+
+---
+
+## 🔬 Automated Test Suite
+
+HireLocal comes with a complete native automated test suite covering all core business logic, matching formulas, security ownership rules, and state machines:
+
+```bash
+npm test
+```
+
+### Test Coverage Summary:
+- **`auth.test.js`**: Indian phone number validation, OTP sending & verification, JWT session authentication, demo personas.
+- **`services.test.js`**: Service categories catalog, slug routing, 404 handlers.
+- **`workers.test.js`**: Worker filtering, trade search, 7-step onboarding, profile updates, postal radius settings.
+- **`matching.test.js`**: Deterministic ranking engine, weighted multi-factor scoring, Haversine geo-distance, alternative worker recommendations.
+- **`reliability.test.js`**: Mathematical reliability calculator, new worker neutral state threshold (< 3 jobs), completion & cancellation penalties.
+- **`jobs.test.js`**: Day-based booking lifecycle (`REQUESTED` → `ACCEPTED` → `IN_PROGRESS` → `COMPLETED`), CallBot auto-dispatch for feature phones.
+- **`ratings.test.js`**: Verified customer review submissions, 1-5 star bounds, worker average rating re-computation.
+- **`callbot.test.js`**: Multilingual state machine, Hindi / English / Marathi / Telugu dialogue scripts, DTMF '1' accept / '2' decline transitions.
+- **`admin.test.js`**: Platform health metrics, worker verification updates, audit trail persistence, demo reset.
+
+---
+
+## 👥 Seeded Demo Accounts (1-Click Switch or Phone Login)
+
+| Role | Name | Phone Number | OTP | Notes |
+|------|------|-------------|-----|-------|
+| **Customer** | Aakash Gupta | `9876543210` | `123456` | Active bookings, review history |
+| **Worker (Smartphone)** | Sunil Verma | `9827044556` | `123456` | Electrician, Smartphone app |
+| **Worker (CallBot)** | Mukesh Sharma | `9827033445` | `123456` | Electrician, Non-Smartphone (CallBot) |
+| **Worker (AC Repair)** | Ramesh Kumar | `9827011223` | `123456` | AC Repair & Service |
+| **Admin** | Admin Officer | `9999999999` | `123456` | Full system audit & control center |
+

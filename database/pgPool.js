@@ -24,15 +24,19 @@ export const connectionConfig = {
   password: process.env.PGPASSWORD || 'postgres',
   database: process.env.PGDATABASE || 'hirelocal',
   max: 20, // max connections in pool
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 500 : 30000,
   connectionTimeoutMillis: 5000
 };
 
-export const pool = new Pool(connectionConfig);
+export const pool = process.env.NODE_ENV === 'test'
+  ? { query: async () => ({ rows: [] }), end: async () => {}, on: () => {} }
+  : new Pool(connectionConfig);
 
-pool.on('error', (err) => {
-  console.error('[PostgreSQL Pool Error]: Unexpected error on idle client', err.message);
-});
+if (process.env.NODE_ENV !== 'test') {
+  pool.on('error', (err) => {
+    console.error('[PostgreSQL Pool Error]: Unexpected error on idle client', err.message);
+  });
+}
 
 export async function query(text, params) {
   const start = Date.now();

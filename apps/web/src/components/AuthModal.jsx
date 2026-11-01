@@ -33,9 +33,9 @@ export default function AuthModal({ initialMode = 'login', onClose, onSuccess, o
     },
     {
       role: 'worker',
-      name: 'Rajesh Sharma',
+      name: 'Sunil Verma',
       trade: 'Electrician',
-      phone: '9827022334',
+      phone: '9827044556',
       badge: 'Worker Pro',
       icon: '⚡',
       color: '#D97706',
@@ -55,9 +55,9 @@ export default function AuthModal({ initialMode = 'login', onClose, onSuccess, o
     },
     {
       role: 'customer',
-      name: 'Rahul Sharma',
+      name: 'Priya Sharma',
       trade: 'Customer',
-      phone: '9827012345',
+      phone: '9876543210',
       badge: 'Customer',
       icon: '👤',
       color: '#16A34A',

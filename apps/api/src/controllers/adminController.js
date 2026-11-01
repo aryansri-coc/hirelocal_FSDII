@@ -150,9 +150,12 @@ export async function updateWorkerVerification(req, res, next) {
       metadata: { verification_status }
     });
 
+    const updatedWorker = db.findById('workers', 'worker_id', id);
+
     return res.json({
       success: true,
-      message: `Worker verification status updated to ${verification_status}`
+      message: `Worker verification status updated to ${verification_status}`,
+      data: updatedWorker
     });
   } catch (err) {
     next(err);

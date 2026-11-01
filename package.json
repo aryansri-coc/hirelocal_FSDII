@@ -16,7 +16,7 @@
     "db:init": "node database/initPg.js",
     "db:seed": "node database/initPg.js",
     "seed": "node database/initPg.js",
-    "test": "node --test apps/api/test/*.test.js"
+    "test": "node --import ./apps/api/test/setupEnv.js --test apps/api/test/*.test.js"
   },
   "keywords": [
     "hyperlocal",
@@ -29,6 +29,7 @@
   "author": "HireLocal Team",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.4.5",
     "pg": "^8.23.0"
   },
   "devDependencies": {
