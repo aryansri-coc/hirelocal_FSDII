@@ -50,7 +50,9 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm --prefix apps/web install @rollup/rollup-linux-x64-gnu@4.63.4 @esbuild/linux-x64@0.21.5 --no-save
 
       - name: Build Web Application (Vite)
         run: npm run build
