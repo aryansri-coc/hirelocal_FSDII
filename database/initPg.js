@@ -1,6 +1,7 @@
 /**
  * PostgreSQL Database Initializer & Migration Runner for HireLocal
- * 1. Creates 'hirelocal' database if it doesn't already exist.
+ * Supports local PostgreSQL, Docker, and Supabase cloud Postgres via DATABASE_URL.
+ * 1. Connects to PostgreSQL (using DATABASE_URL or host/port credentials).
  * 2. Applies database/schema/schema.sql DDL (tables, foreign keys, indexes).
  * 3. Populates synthetic seed data from database/seed/seedData.json.
  */
@@ -18,66 +19,78 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const { Client } = pg;
 
-const host = process.env.PGHOST || 'localhost';
-const port = parseInt(process.env.PGPORT || '5432', 10);
-const user = process.env.PGUSER || 'postgres';
-const password = process.env.PGPASSWORD || 'postgres';
-const targetDb = process.env.PGDATABASE || 'hirelocal';
-
 const SCHEMA_FILE = path.resolve(__dirname, 'schema', 'schema.sql');
 const SEED_FILE = path.resolve(__dirname, 'seed', 'seedData.json');
 
 async function initPostgres() {
   console.log('==================================================');
-  console.log('🐘 Initializing HireLocal on PostgreSQL 18');
-  console.log(`Connecting to ${host}:${port} as user '${user}'...`);
+  console.log('🐘 Initializing HireLocal on PostgreSQL');
 
-  // Step 1: Connect to default postgres DB to ensure target database exists
-  const rootClient = new Client({
-    host,
-    port,
-    user,
-    password,
-    database: 'postgres'
-  });
+  const databaseUrl = process.env.DATABASE_URL;
+  let appClient;
 
-  try {
-    await rootClient.connect();
-    console.log('✓ Connected to PostgreSQL server.');
+  if (databaseUrl) {
+    console.log('Connecting to PostgreSQL via DATABASE_URL...');
+    const isLocal = databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1');
+    appClient = new Client({
+      connectionString: databaseUrl,
+      ssl: isLocal ? false : { rejectUnauthorized: false }
+    });
+    await appClient.connect();
+    console.log('✓ Successfully connected to remote PostgreSQL via DATABASE_URL.');
+  } else {
+    const host = process.env.PGHOST || 'localhost';
+    const port = parseInt(process.env.PGPORT || '5432', 10);
+    const user = process.env.PGUSER || 'postgres';
+    const password = process.env.PGPASSWORD || 'postgres';
+    const targetDb = process.env.PGDATABASE || 'hirelocal';
 
-    const checkDb = await rootClient.query(
-      `SELECT 1 FROM pg_database WHERE datname = $1`,
-      [targetDb]
-    );
+    console.log(`Connecting to local ${host}:${port} as user '${user}'...`);
 
-    if (checkDb.rows.length === 0) {
-      console.log(`Creating database '${targetDb}'...`);
-      await rootClient.query(`CREATE DATABASE "${targetDb}"`);
-      console.log(`✓ Database '${targetDb}' created successfully.`);
-    } else {
-      console.log(`✓ Database '${targetDb}' verified.`);
+    // Step 1: Connect to default postgres DB to ensure target database exists
+    const rootClient = new Client({
+      host,
+      port,
+      user,
+      password,
+      database: 'postgres'
+    });
+
+    try {
+      await rootClient.connect();
+      console.log('✓ Connected to PostgreSQL server.');
+
+      const checkDb = await rootClient.query(
+        `SELECT 1 FROM pg_database WHERE datname = $1`,
+        [targetDb]
+      );
+
+      if (checkDb.rows.length === 0) {
+        console.log(`Creating database '${targetDb}'...`);
+        await rootClient.query(`CREATE DATABASE "${targetDb}"`);
+        console.log(`✓ Database '${targetDb}' created successfully.`);
+      } else {
+        console.log(`✓ Database '${targetDb}' verified.`);
+      }
+    } catch (err) {
+      console.error('Error verifying database existence:', err.message);
+      throw err;
+    } finally {
+      await rootClient.end();
     }
-  } catch (err) {
-    console.error('Error verifying database existence:', err.message);
-    throw err;
-  } finally {
-    await rootClient.end();
+
+    appClient = new Client({
+      host,
+      port,
+      user,
+      password,
+      database: targetDb
+    });
+    await appClient.connect();
+    console.log(`✓ Connected to local database '${targetDb}'.`);
   }
 
-  // Step 2: Connect to target 'hirelocal' database
-  console.log(`\nConnecting to database '${targetDb}'...`);
-  const appClient = new Client({
-    host,
-    port,
-    user,
-    password,
-    database: targetDb
-  });
-
   try {
-    await appClient.connect();
-    console.log(`✓ Connected to '${targetDb}'.`);
-
     // Clean previous legacy schema tables if users table had old schema
     const checkUsersCol = await appClient.query(`
       SELECT column_name FROM information_schema.columns
@@ -99,7 +112,7 @@ async function initPostgres() {
     await appClient.query(schemaSql);
     console.log('✓ All tables, foreign keys, and indexes created in PostgreSQL!');
 
-    // Step 3: Populate seed data if tables are empty
+    // Populate seed data if tables are empty
     console.log('\nChecking seed data...');
     const userCount = await appClient.query('SELECT count(*) FROM users');
     if (parseInt(userCount.rows[0].count, 10) === 0) {
@@ -224,7 +237,7 @@ async function initPostgres() {
         `INSERT INTO audit_logs (log_id, actor_id, actor_name, action, entity_type, entity_id, source, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (log_id) DO NOTHING`,
-        ['aud_pg_init', 'system', 'PostgreSQL Setup', 'DATABASE_INITIALIZED', 'system', 'hirelocal_pg', 'system', 'Schema and initial seed records created in PostgreSQL 18']
+        ['aud_pg_init', 'system', 'PostgreSQL Setup', 'DATABASE_INITIALIZED', 'system', 'hirelocal_pg', 'system', 'Schema and initial seed records created in PostgreSQL']
       );
 
       console.log('✓ Synthetic seed data successfully populated in PostgreSQL!');
@@ -234,7 +247,6 @@ async function initPostgres() {
 
     console.log('==================================================');
     console.log('🎉 PostgreSQL setup complete!');
-    console.log(`Database URL: postgresql://${user}:****@${host}:${port}/${targetDb}`);
     console.log('==================================================');
   } catch (err) {
     console.error('Error during PostgreSQL migration/seed:', err);

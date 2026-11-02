@@ -1,0 +1,30 @@
+# HireLocal API Backend Dockerfile
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+
+# Install curl for container health check
+RUN apk add --no-cache curl
+
+# Copy root manifests and workspace configs
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Install dependencies (skipping dev dependencies)
+RUN npm install --omit=dev
+
+# Copy application code, shared libraries, and database modules
+COPY apps/api ./apps/api
+COPY packages ./packages
+COPY database ./database
+
+# Environment and networking
+ENV NODE_ENV=production
+ENV PORT=5000
+EXPOSE 5000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/api/health || exit 1
+
+CMD ["node", "apps/api/src/server.js"]

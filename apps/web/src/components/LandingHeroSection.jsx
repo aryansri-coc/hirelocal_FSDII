@@ -351,20 +351,26 @@ export default function LandingHeroSection({
                 <MapPin size={12} /> PINCODE:
               </span>
               {[
-                { pin: '824101', name: 'Bihar (824101)' },
-                { pin: '143410', name: 'Punjab (143410)' },
-                { pin: '462011', name: 'Bhopal (462011)' },
-                { pin: '110001', name: 'Delhi (110001)' },
-                { pin: '400058', name: 'Mumbai (400058)' }
+                { pin: '462011', locality: 'MP Nagar', district: 'Bhopal', label: 'Bhopal (462011)' },
+                { pin: '140413', locality: 'Bajheri', district: 'Mohali', label: 'Punjab (140413)' },
+                { pin: '824101', locality: 'Aurangabad', district: 'Aurangabad', label: 'Bihar (824101)' },
+                { pin: '110001', locality: 'Connaught Place', district: 'Central Delhi', label: 'Delhi (110001)' },
+                { pin: '400058', locality: 'Andheri West', district: 'Mumbai', label: 'Mumbai (400058)' }
               ].map((item) => (
                 <button
                   key={item.pin}
                   type="button"
                   onClick={() => {
                     setPincodeInput(item.pin);
-                    setSelectedLoc(item.name);
+                    setSelectedLoc(item.label);
                     if (onSelectLocation) {
-                      onSelectLocation({ pincode: item.pin, locality: item.name, label: item.name });
+                      onSelectLocation({
+                        pincode: item.pin,
+                        locality: item.locality,
+                        district: item.district,
+                        city: item.district,
+                        label: item.label
+                      });
                     }
                     if (onSearch) {
                       onSearch(searchInput, item.pin);
@@ -382,7 +388,7 @@ export default function LandingHeroSection({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  {item.name}
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -463,7 +469,7 @@ export default function LandingHeroSection({
               ========================================================= */}
           <div className="hl-hero-visual-col">
             <PincodeGeographicMapCard
-              pincode={pincodeInput || '824101'}
+              pincode={pincodeInput || '462011'}
               locationLabel={selectedLoc}
               onSelectLocality={(addr) => {
                 handleAddressPick(addr);

@@ -157,6 +157,20 @@ export default function LandingPage({
 
   const dockRef = useRef(null);
 
+  // Synchronize state when selectedLocation prop changes from Navbar or App
+  useEffect(() => {
+    if (selectedLocation) {
+      setSelectedLocationObj(selectedLocation);
+      const label = typeof selectedLocation === 'object'
+        ? (selectedLocation.label || `${selectedLocation.locality || selectedLocation.name || 'Location'} (${selectedLocation.pincode})`)
+        : selectedLocation;
+      setLocationQuery(label);
+      if (selectedLocation.pincode) {
+        setSelectedPincode(selectedLocation.pincode);
+      }
+    }
+  }, [selectedLocation]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -227,7 +241,11 @@ export default function LandingPage({
     const label = item.label || `${item.name || item.locality}, ${item.district || item.city || ''} (${item.pincode})`;
     setLocationQuery(label);
     setSelectedPincode(item.pincode);
+    setSelectedLocationObj(item);
     setOpenDropdown(null);
+    if (onSelectLocation) {
+      onSelectLocation(item);
+    }
   };
 
   // Filtered workers for the top workers showcase

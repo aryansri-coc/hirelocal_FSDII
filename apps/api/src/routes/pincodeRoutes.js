@@ -288,6 +288,13 @@ async function fetchAllAddressesForPincode(pincode) {
     return pincodeCache.get(cacheKey);
   }
 
+  // Prioritize curated multi-locality hubs (e.g. Bhopal 462011, Mohali 140413, Delhi 110001) for rich locality tags
+  if (PINCODE_LOCAL_FALLBACKS[pin] && PINCODE_LOCAL_FALLBACKS[pin].length > 1) {
+    const fallbackList = PINCODE_LOCAL_FALLBACKS[pin].map(formatPostOffice);
+    pincodeCache.set(cacheKey, fallbackList);
+    return fallbackList;
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6500);
@@ -416,10 +423,10 @@ router.get('/geo/:pincode', async (req, res) => {
         maxLng: (lng + deltaLng).toFixed(4),
         maxLat: (lat + deltaLat).toFixed(4)
       },
-      osmEmbedUrl: `https://www.openstreetmap.org/export/embed.html?bbox=${(lng - deltaLng).toFixed(4)}%2C${(lat - deltaLat).toFixed(4)}%2C${(lng + deltaLng).toFixed(4)}%2C${(lat + deltaLat).toFixed(4)}&layer=mapnik&marker=${lat}%2C${lng}`,
-      locality: addresses[0]?.name || addresses[0]?.locality || 'Local Area',
-      district: addresses[0]?.district || '',
-      state: addresses[0]?.state || '',
+      osmEmbedUrl: `https://www.openstreetmap.org/export/embed.html?bbox=${(lng - deltaLng).toFixed(4)}%2C${(lat - deltaLat).toFixed(4)}%2C${(lng + deltaLng).toFixed(4)}%2C${(lat + deltaLat).toFixed(4)}&layer=mapnik`,
+      locality: coordinates?.locality || addresses[0]?.name || addresses[0]?.locality || 'Local Area',
+      district: coordinates?.district || addresses[0]?.district || '',
+      state: coordinates?.state || addresses[0]?.state || '',
       localities: addresses.slice(0, 10),
       count: addresses.length
     });

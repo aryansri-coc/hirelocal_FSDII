@@ -383,6 +383,7 @@ export default function App() {
       {authModalState && (
         <AuthModal
           initialMode={authModalState}
+          selectedLocation={selectedLocation}
           onClose={() => setAuthModalState(null)}
           onSuccess={(targetTab) => {
             fetchWorkers();

@@ -1,5 +1,4 @@
--- HireLocal Database Schema
--- Implements Section 18 of the Build Specification + Real RBAC, Notifications & Audit Logs
+
 
 CREATE TABLE IF NOT EXISTS users (
   user_id VARCHAR(36) PRIMARY KEY,

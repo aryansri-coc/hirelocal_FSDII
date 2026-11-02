@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.github
+.vscode
+.env
+.tmp
+database/storage/*.json
+!database/storage/.gitkeep
+dist
+coverage
+

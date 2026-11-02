@@ -102,9 +102,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signup = async (phone, name, email, role = 'customer', otp) => {
+  const signup = async (phone, name, email, role = 'customer', otp, address = '') => {
     try {
-      const res = await api.signup({ phone, name, email, role, otp });
+      const res = await api.signup({ phone, name, email, role, otp, address });
       if (res.success) {
         const { token: newToken, user: newUser } = res.data;
         localStorage.setItem('hirelocal_token', newToken);

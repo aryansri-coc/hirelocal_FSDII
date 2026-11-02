@@ -3,24 +3,21 @@ import { api } from '../api/client';
 import {
   MapPin,
   Compass,
-  Zap,
-  Wrench,
-  Hammer,
   ChevronRight,
   Image as ImageIcon,
   Building2,
-  ShieldCheck,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
 
 // Pre-seeded coordinates for instant zero-latency loading of popular hubs
 const LOCAL_GEO_MAP = {
-  '824101': { lat: 24.7538, lng: 84.3736, locality: 'Aurangabad', district: 'Aurangabad(BH)', state: 'Bihar' },
-  '143410': { lat: 31.3256, lng: 74.9213, locality: 'Dadeha Sahib / Sarhali', district: 'Amritsar / Tarn Taran', state: 'Punjab' },
   '462011': { lat: 23.2332, lng: 77.4343, locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh' },
   '462016': { lat: 23.2100, lng: 77.4330, locality: 'Arera Colony', district: 'Bhopal', state: 'Madhya Pradesh' },
   '462023': { lat: 23.2650, lng: 77.4640, locality: 'Govindpura', district: 'Bhopal', state: 'Madhya Pradesh' },
   '462003': { lat: 23.2380, lng: 77.4010, locality: 'New Market', district: 'Bhopal', state: 'Madhya Pradesh' },
+  '824101': { lat: 24.7538, lng: 84.3736, locality: 'Aurangabad', district: 'Aurangabad(BH)', state: 'Bihar' },
+  '140413': { lat: 30.7516, lng: 76.5912, locality: 'Bajheri', district: 'Mohali', state: 'Punjab' },
+  '143410': { lat: 31.3256, lng: 74.9213, locality: 'Sarhali', district: 'Amritsar / Tarn Taran', state: 'Punjab' },
   '110001': { lat: 28.6315, lng: 77.2167, locality: 'Connaught Place', district: 'Central Delhi', state: 'Delhi' },
   '400058': { lat: 19.1197, lng: 72.8468, locality: 'Andheri West', district: 'Mumbai', state: 'Maharashtra' },
   '560034': { lat: 12.9352, lng: 77.6245, locality: 'Koramangala', district: 'Bengaluru', state: 'Karnataka' },
@@ -32,15 +29,17 @@ const LOCAL_GEO_MAP = {
 };
 
 export default function PincodeGeographicMapCard({
-  pincode = '824101',
+  pincode = '462011',
   locationLabel = '',
   onSelectLocality,
   onExplorePros,
   activeTradeName = 'Pros'
 }) {
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'photo'
+  const cleanPin = (pincode || '462011').toString().trim().slice(0, 6);
+
   const [geoData, setGeoData] = useState(() => {
-    const defaultCoords = LOCAL_GEO_MAP[pincode] || LOCAL_GEO_MAP['824101'];
+    const defaultCoords = LOCAL_GEO_MAP[cleanPin] || LOCAL_GEO_MAP['462011'];
     return {
       lat: defaultCoords.lat,
       lng: defaultCoords.lng,
@@ -51,10 +50,6 @@ export default function PincodeGeographicMapCard({
     };
   });
   const [loading, setLoading] = useState(false);
-  const [activeWorkerHover, setActiveWorkerHover] = useState(null);
-
-  // Clean 6-digit PINCODE
-  const cleanPin = (pincode || '824101').toString().trim().slice(0, 6);
 
   useEffect(() => {
     if (!cleanPin || cleanPin.length !== 6) return;
@@ -69,14 +64,14 @@ export default function PincodeGeographicMapCard({
         setGeoData({
           lat: res.coordinates.lat,
           lng: res.coordinates.lng,
-          locality: res.locality || 'Local Hub',
-          district: res.district || '',
-          state: res.state || '',
+          locality: res.locality || LOCAL_GEO_MAP[pin]?.locality || 'Local Hub',
+          district: res.district || LOCAL_GEO_MAP[pin]?.district || '',
+          state: res.state || LOCAL_GEO_MAP[pin]?.state || '',
           localities: res.localities || [],
-          count: res.count || 0
+          count: res.count || (res.localities?.length || 0)
         });
       } else {
-        const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['824101'];
+        const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['462011'];
         setGeoData((prev) => ({
           ...prev,
           lat: fallback.lat,
@@ -88,7 +83,7 @@ export default function PincodeGeographicMapCard({
       }
     } catch (err) {
       console.warn('Failed to load geo details for', pin, err);
-      const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['824101'];
+      const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['462011'];
       setGeoData((prev) => ({
         ...prev,
         lat: fallback.lat,
@@ -104,54 +99,11 @@ export default function PincodeGeographicMapCard({
 
   const { lat, lng, locality, localities, count } = geoData;
 
-  // OpenStreetMap embed URL with focused bounding box centered on exact coordinates
+  // OpenStreetMap embed URL centered precisely on PIN coordinates (without artificial marker overlay)
   const deltaLng = 0.038;
   const deltaLat = 0.028;
   const bbox = `${(lng - deltaLng).toFixed(4)}%2C${(lat - deltaLat).toFixed(4)}%2C${(lng + deltaLng).toFixed(4)}%2C${(lat + deltaLat).toFixed(4)}`;
-  const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
-
-  // Clean icon-only worker pins (no bulky text on the map as requested)
-  const workerPins = [
-    {
-      id: 'p1',
-      name: 'Mukesh Sharma',
-      trade: 'Electrician',
-      Icon: Zap,
-      color: '#EA580C',
-      bgColor: '#FFF7ED',
-      rating: 4.9,
-      distance: '1.4 km',
-      rate: '₹550/d',
-      top: '34%',
-      left: '28%'
-    },
-    {
-      id: 'p2',
-      name: 'Ramesh Verma',
-      trade: 'Plumber',
-      Icon: Wrench,
-      color: '#0284C7',
-      bgColor: '#F0F9FF',
-      rating: 4.8,
-      distance: '2.1 km',
-      rate: '₹600/d',
-      top: '56%',
-      left: '68%'
-    },
-    {
-      id: 'p3',
-      name: 'Suresh Carpenter',
-      trade: 'Carpenter',
-      Icon: Hammer,
-      color: '#D97706',
-      bgColor: '#FEF3C7',
-      rating: 4.8,
-      distance: '2.8 km',
-      rate: '₹650/d',
-      top: '64%',
-      left: '32%'
-    }
-  ];
+  const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
 
   return (
     <div className="hl-geo-map-card" style={{
@@ -167,7 +119,7 @@ export default function PincodeGeographicMapCard({
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Top Floating Control Bar: Just PINCODE + Single Toggle Button */}
+      {/* Top Floating Control Bar */}
       <div style={{
         position: 'absolute',
         top: '12px',
@@ -178,7 +130,7 @@ export default function PincodeGeographicMapCard({
         gap: '6px',
         pointerEvents: 'auto'
       }}>
-        {/* Clean Pincode Badge */}
+        {/* Pincode & Hub Badge */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -190,9 +142,8 @@ export default function PincodeGeographicMapCard({
           border: '1px solid rgba(255, 255, 255, 0.2)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
           color: '#FFFFFF',
-          fontSize: '12.5px',
-          fontWeight: 700,
-          fontFamily: 'monospace'
+          fontSize: '12px',
+          fontWeight: 700
         }}>
           <span style={{
             width: '7px',
@@ -200,14 +151,15 @@ export default function PincodeGeographicMapCard({
             borderRadius: '50%',
             backgroundColor: '#22C55E',
             boxShadow: '0 0 6px #22C55E',
-            display: 'inline-block',
-            animation: 'hl-blink 1.4s ease-in-out infinite'
+            display: 'inline-block'
           }} />
           <MapPin size={13} style={{ color: '#EA580C' }} />
-          <span style={{ color: '#FFFFFF', letterSpacing: '0.04em' }}>{cleanPin}</span>
+          <span style={{ color: '#FFFFFF', letterSpacing: '0.02em' }}>
+            {locality ? `${locality} (${cleanPin})` : cleanPin}
+          </span>
         </div>
 
-        {/* Single Compact Toggle Button: Map ↔ Photo */}
+        {/* View Mode Toggle: Map ↔ Photo */}
         <button
           type="button"
           onClick={() => setViewMode(viewMode === 'map' ? 'photo' : 'map')}
@@ -246,7 +198,7 @@ export default function PincodeGeographicMapCard({
       {/* Main Map or Photo View */}
       {viewMode === 'map' ? (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-          {/* Real Interactive OpenStreetMap Iframe */}
+          {/* Clean Interactive OpenStreetMap — without artificial icon overlays */}
           <iframe
             key={`map-${cleanPin}-${lat}-${lng}`}
             src={osmEmbedUrl}
@@ -261,132 +213,7 @@ export default function PincodeGeographicMapCard({
             loading="lazy"
           />
 
-          {/* Minimal Central Radar Ring */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            zIndex: 10
-          }}>
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              border: '1.5px dashed rgba(234, 88, 12, 0.45)',
-              backgroundColor: 'rgba(234, 88, 12, 0.06)',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              animation: 'hl-pulse-ring 2.6s ease-out infinite'
-            }} />
-            <div style={{
-              width: '210px',
-              height: '210px',
-              borderRadius: '50%',
-              border: '1px solid rgba(234, 88, 12, 0.2)',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              animation: 'hl-pulse-ring 2.6s ease-out infinite 0.8s'
-            }} />
-
-            {/* Sleek Central PIN Marker */}
-            <div style={{
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              backgroundColor: '#EA580C',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.95), 0 4px 10px rgba(0, 0, 0, 0.3)',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}>
-              <MapPin size={14} strokeWidth={2.6} />
-            </div>
-          </div>
-
-          {/* Clean Icon-Only Worker Pins (No text clutter as requested) */}
-          {workerPins.map((worker) => {
-            const IconComp = worker.Icon;
-            return (
-              <div
-                key={worker.id}
-                onMouseEnter={() => setActiveWorkerHover(worker.id)}
-                onMouseLeave={() => setActiveWorkerHover(null)}
-                style={{
-                  position: 'absolute',
-                  top: worker.top,
-                  left: worker.left,
-                  zIndex: 15,
-                  cursor: 'pointer',
-                  transform: 'translate(-50%, -50%)'
-                }}
-              >
-                {/* Sleek Circular Icon Pin with Status Beacon */}
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: '#FFFFFF',
-                  border: `2px solid ${worker.color}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(15, 23, 42, 0.25)',
-                  position: 'relative',
-                  transition: 'transform 0.15s ease',
-                  transform: activeWorkerHover === worker.id ? 'scale(1.15)' : 'scale(1)'
-                }}>
-                  <IconComp size={16} strokeWidth={2.4} style={{ color: worker.color }} />
-                  {/* Tiny Online Status Dot */}
-                  <span style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    right: '-2px',
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: '#22C55E',
-                    border: '1.5px solid #FFFFFF'
-                  }} />
-                </div>
-
-                {/* Subtle Hover Tooltip Only */}
-                {activeWorkerHover === worker.id && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '125%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: '#0F172A',
-                    color: '#FFFFFF',
-                    padding: '5px 9px',
-                    borderRadius: '7px',
-                    fontSize: '11px',
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
-                    whiteSpace: 'nowrap',
-                    zIndex: 25,
-                    pointerEvents: 'none',
-                    border: '1px solid rgba(255,255,255,0.12)'
-                  }}>
-                    <span style={{ fontWeight: 700 }}>{worker.trade}</span>
-                    <span style={{ color: '#94A3B8', marginLeft: '5px', fontSize: '10px' }}>{worker.distance}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Sleek, Compact Floating Bottom Glass Bar */}
+          {/* Floating Bottom Glass Bar */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
@@ -404,7 +231,7 @@ export default function PincodeGeographicMapCard({
             justifyContent: 'space-between',
             gap: '8px'
           }}>
-            {/* Left: Compact Postal Localities */}
+            {/* Left: Postal Localities */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -424,41 +251,44 @@ export default function PincodeGeographicMapCard({
                 flexShrink: 0
               }}>
                 <Building2 size={13} style={{ color: '#EA580C' }} />
-                <span>{count || (localities?.length || 2)} Localities:</span>
+                <span>Localities:</span>
               </span>
 
               {localities && localities.length > 0 ? (
-                localities.slice(0, 4).map((loc, idx) => (
-                  <button
-                    key={`${loc.name}-${idx}`}
-                    type="button"
-                    onClick={() => onSelectLocality && onSelectLocality(loc)}
-                    style={{
-                      padding: '2px 7px',
-                      borderRadius: '5px',
-                      backgroundColor: '#F1F5F9',
-                      border: '1px solid #E2E8F0',
-                      color: '#1E293B',
-                      fontSize: '10.5px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                      transition: 'all 0.15s ease'
-                    }}
-                    title={`Click to focus: ${loc.fullAddress || loc.name}`}
-                  >
-                    {loc.name}
-                  </button>
-                ))
+                localities.slice(0, 4).map((loc, idx) => {
+                  const locName = typeof loc === 'string' ? loc : (loc.name || loc.locality);
+                  return (
+                    <button
+                      key={`${locName}-${idx}`}
+                      type="button"
+                      onClick={() => onSelectLocality && onSelectLocality(typeof loc === 'string' ? { name: loc, pincode: cleanPin } : loc)}
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: '5px',
+                        backgroundColor: '#F1F5F9',
+                        border: '1px solid #E2E8F0',
+                        color: '#1E293B',
+                        fontSize: '10.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Click to focus: ${locName}`}
+                    >
+                      {locName}
+                    </button>
+                  );
+                })
               ) : (
                 <span style={{ fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap' }}>
-                  {locality || 'Aurangabad'} & surrounding hubs
+                  {locality || 'Local Hub'} & surrounding areas
                 </span>
               )}
             </div>
 
-            {/* Right: Compact Clean CTA Button */}
+            {/* Right: CTA Button */}
             <button
               type="button"
               onClick={() => {
@@ -525,7 +355,7 @@ export default function PincodeGeographicMapCard({
           }}>
             <div style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
               <ShieldCheck size={14} style={{ color: '#22C55E' }} />
-              <span>Verified Pros available in {cleanPin}</span>
+              <span>Verified Pros available in {locality ? `${locality} (${cleanPin})` : cleanPin}</span>
             </div>
             <button
               type="button"

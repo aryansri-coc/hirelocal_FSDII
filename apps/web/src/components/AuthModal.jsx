@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { isValidIndianPhone } from '../../../../packages/validation/validators.js';
-import { X, Lock, Phone, User, Mail, ArrowRight, Briefcase, ShieldCheck, CheckCircle, Zap, Wrench } from 'lucide-react';
+import { X, Lock, Phone, User, Mail, ArrowRight, Briefcase, ShieldCheck, CheckCircle, Zap, Wrench, MapPin } from 'lucide-react';
 
-export default function AuthModal({ initialMode = 'login', onClose, onSuccess, onOpenWorkerOnboard }) {
+export default function AuthModal({ initialMode = 'login', onClose, onSuccess, onOpenWorkerOnboard, selectedLocation }) {
   const { login, signup, showToast } = useAuth();
 
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup'
@@ -12,6 +12,15 @@ export default function AuthModal({ initialMode = 'login', onClose, onSuccess, o
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState(() => {
+    if (selectedLocation) {
+      if (typeof selectedLocation === 'object') {
+        return selectedLocation.label || `${selectedLocation.locality || selectedLocation.name || ''} (${selectedLocation.pincode || ''})`.trim();
+      }
+      return String(selectedLocation);
+    }
+    return '';
+  });
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -156,7 +165,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onSuccess, o
           setSubmitting(false);
           return;
         }
-        const res = await signup(phone, name, email, signupRole, otp);
+        const res = await signup(phone, name, email, signupRole, otp, address);
         if (onSuccess) {
           if (signupRole === 'worker') onSuccess('worker_dashboard');
           else onSuccess('customer_dashboard');

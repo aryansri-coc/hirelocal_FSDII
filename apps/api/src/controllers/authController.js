@@ -40,7 +40,7 @@ export async function sendOtp(req, res, next) {
 
 export async function signup(req, res, next) {
   try {
-    const { phone, name, email, role = 'customer', otp } = req.body;
+    const { phone, name, email, role = 'customer', otp, address } = req.body;
 
     if (!phone || !isValidIndianPhone(phone)) {
       return res.status(400).json({
@@ -79,12 +79,16 @@ export async function signup(req, res, next) {
     otpStore.delete(cleanPhone);
 
     const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const userAddress = (address && typeof address === 'string' && address.trim())
+      ? address.trim()
+      : (req.body.location ? String(req.body.location).trim() : null);
+
     const newUser = {
       user_id: userId,
       name: name.trim(),
       phone: cleanPhone,
       email: email?.trim() || null,
-      address: 'Bhopal, MP',
+      address: userAddress,
       role: role === 'worker' ? 'worker' : 'customer',
       status: 'active',
       created_at: new Date().toISOString(),

@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 import authRoutes from './routes/authRoutes.js';
@@ -11,6 +14,10 @@ import callbotRoutes from './routes/callbotRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import pincodeRoutes from './routes/pincodeRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const webDistPath = path.resolve(__dirname, '../../../apps/web/dist');
 
 const app = express();
 
@@ -31,16 +38,18 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Root welcome endpoint & redirect to frontend
-app.get('/', (req, res) => {
-  if (req.accepts('html')) {
-    return res.redirect('http://localhost:5173');
-  }
+// Serve static frontend assets if built
+if (fs.existsSync(webDistPath)) {
+  app.use(express.static(webDistPath));
+}
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
   res.json({
-    name: 'HireLocal API',
-    status: 'running',
-    frontend: 'http://localhost:5173',
-    health: '/api/health'
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'HireLocal Backend API',
+    version: '1.0.0'
   });
 });
 
@@ -54,13 +63,19 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Root welcome endpoint & redirect to frontend
+app.get('/', (req, res) => {
+  if (fs.existsSync(webDistPath)) {
+    return res.sendFile(path.join(webDistPath, 'index.html'));
+  }
+  if (req.accepts('html')) {
+    return res.redirect('http://localhost:5173');
+  }
   res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'HireLocal Backend API',
-    version: '1.0.0'
+    name: 'HireLocal API',
+    status: 'running',
+    frontend: 'http://localhost:5173',
+    health: '/api/health'
   });
 });
 
@@ -75,9 +90,16 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/pincode', pincodeRoutes);
 
+// Single Page Application fallback for non-API client routes
+if (fs.existsSync(webDistPath)) {
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) return next();
+    res.sendFile(path.join(webDistPath, 'index.html'));
+  });
+}
+
 // Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
-

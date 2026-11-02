@@ -1,6 +1,7 @@
 /**
  * PostgreSQL Connection Pool for HireLocal
  * Connects to PostgreSQL using pg.Pool with configurable environment variables.
+ * Supports local PostgreSQL, Docker, and Hosted Supabase / Cloud Postgres with SSL.
  */
 
 import pg from 'pg';
@@ -16,17 +17,27 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const { Pool } = pg;
 
-export const connectionConfig = {
-  connectionString: process.env.DATABASE_URL || undefined,
-  host: process.env.PGHOST || 'localhost',
-  port: parseInt(process.env.PGPORT || '5432', 10),
-  user: process.env.PGUSER || 'postgres',
-  password: process.env.PGPASSWORD || 'postgres',
-  database: process.env.PGDATABASE || 'hirelocal',
-  max: 20, // max connections in pool
-  idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 500 : 30000,
-  connectionTimeoutMillis: 5000
-};
+export const connectionConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: (process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1'))
+        ? false
+        : { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 500 : 30000,
+      connectionTimeoutMillis: 10000
+    }
+  : {
+      host: process.env.PGHOST || 'localhost',
+      port: parseInt(process.env.PGPORT || '5432', 10),
+      user: process.env.PGUSER || 'postgres',
+      password: process.env.PGPASSWORD || 'postgres',
+      database: process.env.PGDATABASE || 'hirelocal',
+      ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
+      max: 20,
+      idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 500 : 30000,
+      connectionTimeoutMillis: 5000
+    };
 
 export const pool = process.env.NODE_ENV === 'test'
   ? { query: async () => ({ rows: [] }), end: async () => {}, on: () => {} }
@@ -43,7 +54,7 @@ export async function query(text, params) {
   const res = await pool.query(text, params);
   const duration = Date.now() - start;
   if (process.env.NODE_ENV === 'development') {
-    // optional debug logging
+
   }
   return res;
 }

@@ -1,0 +1,81 @@
+services:
+  # ========================================================
+  # PostgreSQL 16 Relational Database Service
+  # ========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: hirelocal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hirelocal
+      POSTGRES_USER: hirelocal
+      POSTGRES_PASSWORD: hirelocal_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hirelocal -d hirelocal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hirelocal-network
+
+  # ========================================================
+  # HireLocal Express REST API & AI CallBot Engine
+  # ========================================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: hirelocal-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DB_CLIENT: postgres
+      DATABASE_URL: postgresql://hirelocal:hirelocal_secret@postgres:5432/hirelocal
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: hirelocal
+      PGUSER: hirelocal
+      PGPASSWORD: hirelocal_secret
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hirelocal-network
+
+  # ========================================================
+  # HireLocal Web Frontend (Nginx SPA + Reverse Proxy)
+  # ========================================================
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: hirelocal-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+    networks:
+      - hirelocal-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  hirelocal-network:
+    driver: bridge
