@@ -7,6 +7,7 @@ import {
 } from '../../../../packages/services/reliabilityCalculator.js';
 import { getAlternativeWorkers, matchWorkers } from '../../../../packages/services/matchingEngine.js';
 import { triggerJobOfferCall } from '../services/telephonyService.js';
+import { sendJobSmsNotification } from '../services/smsService.js';
 
 
 export async function createJob(req, res, next) {
@@ -126,6 +127,16 @@ export async function createJob(req, res, next) {
         entityType: 'job',
         entityId: jobId
       });
+
+      // ⚡ Send SMS Alert to worker with hotline number to accept
+      if (selectedWorker.phone) {
+        const alertSms = `नमस्ते ${selectedWorker.name} जी! HireLocal से नया काम आया है: ${service_type} (दिहाड़ी: ₹${newJob.estimated_cost})। काम स्वीकार करने के लिए हमारे हेल्पलाइन +1 (318) 408 9902 पर कॉल करके 'हाँ' कहें।`;
+        sendJobSmsNotification({
+          toPhone: selectedWorker.phone,
+          message: alertSms,
+          title: 'Job Offer SMS Alert'
+        }).catch((e) => console.warn('[Job SMS] Notice:', e.message));
+      }
 
       // If worker is non-smartphone, initiate CallBot outbound session immediately
       if (selectedWorker.communication_type === 'non_smartphone' || selectedWorker.communication_type === 'all') {

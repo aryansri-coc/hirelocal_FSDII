@@ -12,6 +12,7 @@ import { isBhashiniConfigured, translateTextBhashini } from '../../apps/api/src/
 import { getCoordinatesForPincode } from '../../apps/api/src/routes/pincodeRoutes.js';
 import { triggerJobOfferCall, handleWorkerRejection } from '../../apps/api/src/services/telephonyService.js';
 import { JOB_STATUS } from '../shared/statusVocabulary.js';
+import { sendJobSmsNotification } from '../../apps/api/src/services/smsService.js';
 
 /**
  * Checks if Bhashini is fully configured with valid (non-placeholder) credentials
@@ -1016,6 +1017,17 @@ export async function respondToJobOfferViaVoice(params = {}, context = {}) {
         cost: targetJob.estimated_cost
       }
     });
+
+    // ⚡ Send SMS confirmation with customer details to worker
+    const targetPhone = phone || worker?.phone;
+    if (targetPhone) {
+      const smsText = `नमस्ते ${workerName} जी! आपने ${targetJob.service_type} का काम स्वीकार कर लिया है।\n\nग्राहक: ${targetJob.customer_name || 'ग्राहक'} (${targetJob.customer_phone || ''})\nस्थान: ${targetJob.address}\nतारीख: ${targetJob.required_date || 'तय तिथि'}\nदिहाड़ी: ₹${targetJob.estimated_cost}\n\n- HireLocal`;
+      sendJobSmsNotification({
+        toPhone: targetPhone,
+        message: smsText,
+        title: 'Job Confirmation SMS'
+      }).catch((e) => console.warn('[SMS] Dispatch notice:', e.message));
+    }
 
     const speech = lang === 'en'
       ? `Excellent ${workerName}! You have successfully accepted the job for ${targetJob.service_type} at ${targetJob.address}. The customer has been notified with your confirmation. Daily wage: ${targetJob.estimated_cost} rupees. Thank you!`
