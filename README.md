@@ -168,14 +168,3 @@ npm test
 - **`admin.test.js`**: Platform health metrics, worker verification updates, audit trail persistence, demo reset.
 
 ---
-
-## 👥 Seeded Demo Accounts (1-Click Switch or Phone Login)
-
-| Role | Name | Phone Number | OTP | Notes |
-|------|------|-------------|-----|-------|
-| **Customer** | Aakash Gupta | `9876543210` | `123456` | Active bookings, review history |
-| **Worker (Smartphone)** | Sunil Verma | `9827044556` | `123456` | Electrician, Smartphone app |
-| **Worker (CallBot)** | Mukesh Sharma | `9827033445` | `123456` | Electrician, Non-Smartphone (CallBot) |
-| **Worker (AC Repair)** | Ramesh Kumar | `9827011223` | `123456` | AC Repair & Service |
-| **Admin** | Admin Officer | `9999999999` | `123456` | Full system audit & control center |
-
