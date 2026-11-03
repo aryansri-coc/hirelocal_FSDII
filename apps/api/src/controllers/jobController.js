@@ -86,6 +86,8 @@ export async function createJob(req, res, next) {
       customer_phone: customer.phone,
       worker_id: assignedWorkerId || null,
       worker_name: selectedWorker ? selectedWorker.name : null,
+      worker_phone: selectedWorker?.phone || null,
+      phone: selectedWorker?.phone || null,
       service_type,
       address,
       latitude: latitude || 23.2332,
@@ -184,10 +186,33 @@ export async function getMyJobs(req, res, next) {
 
     userJobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+    // Enrich each job with real worker phone and details from workers/users table
+    const enrichedJobs = userJobs.map((j) => {
+      let workerPhone = j.worker_phone || j.phone;
+      let commType = j.communication_type;
+      if (j.worker_id) {
+        const worker = db.findById('workers', 'worker_id', j.worker_id);
+        if (worker) {
+          if (!workerPhone) workerPhone = worker.phone;
+          if (!commType) commType = worker.communication_type;
+          if (!workerPhone && worker.user_id) {
+            const u = db.findById('users', 'user_id', worker.user_id);
+            if (u) workerPhone = u.phone;
+          }
+        }
+      }
+      return {
+        ...j,
+        worker_phone: workerPhone,
+        phone: workerPhone,
+        communication_type: commType || 'direct'
+      };
+    });
+
     return res.json({
       success: true,
-      count: userJobs.length,
-      data: userJobs
+      count: enrichedJobs.length,
+      data: enrichedJobs
     });
   } catch (err) {
     next(err);

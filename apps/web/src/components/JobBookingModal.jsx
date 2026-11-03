@@ -501,20 +501,24 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                 backgroundColor: '#FCFAF7',
                 border: '1px solid var(--border)'
               }}>
-                <img
-                  src={avatarUrl}
-                  alt={worker?.name}
+                <div
                   style={{
                     width: '56px',
                     height: '56px',
                     borderRadius: '14px',
-                    objectFit: 'cover'
+                    backgroundColor: '#FFF7ED',
+                    color: '#EA580C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    fontWeight: 800,
+                    border: '1.5px solid #FFEDD5',
+                    flexShrink: 0
                   }}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80';
-                  }}
-                />
+                >
+                  {(worker?.name || 'A').charAt(0).toUpperCase()}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)' }}>
                     {worker?.name || 'Local Artisan'}

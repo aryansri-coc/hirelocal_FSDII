@@ -23,6 +23,15 @@ import {
   MessageSquare
 } from 'lucide-react';
 
+function formatWorkerPhone(phone) {
+  if (!phone) return '+91 99058 17179';
+  const clean = String(phone).replace(/\D/g, '').slice(-10);
+  if (clean.length === 10) {
+    return `+91 ${clean.slice(0, 5)} ${clean.slice(5)}`;
+  }
+  return String(phone);
+}
+
 export default function MyBookingsView({
   onFindWorker,
   onOpenCallbotForJob
@@ -79,7 +88,8 @@ export default function MyBookingsView({
             displayStatus,
             statusColor,
             dateLabel,
-            avatar: job.worker_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
+            worker_phone: job.worker_phone || job.phone,
+            phone: job.worker_phone || job.phone,
             profession: job.profession || 'Electrician'
           };
         });
@@ -234,15 +244,25 @@ export default function MyBookingsView({
                 <div key={booking.job_id} className="hl-booking-card">
                   {/* LEFT: Avatar + Worker Details */}
                   <div className="hl-booking-left">
-                    <img
-                      src={booking.avatar}
-                      alt={booking.worker_name}
-                      className="hl-booking-avatar"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80';
+                    <div
+                      className="hl-booking-avatar hl-booking-avatar-initial"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#FFF7ED',
+                        color: '#EA580C',
+                        fontSize: '22px',
+                        fontWeight: 800,
+                        border: '1.5px solid #FFEDD5',
+                        borderRadius: '14px',
+                        width: '60px',
+                        height: '60px',
+                        flexShrink: 0
                       }}
-                    />
+                    >
+                      {(booking.worker_name || 'W').charAt(0).toUpperCase()}
+                    </div>
 
                     <div className="hl-booking-info">
                       <h3 className="hl-booking-name">{booking.worker_name}</h3>
@@ -366,11 +386,24 @@ export default function MyBookingsView({
                 border: '1px solid #E5E7EB',
                 marginBottom: '16px'
               }}>
-                <img
-                  src={selectedBookingDetails.avatar}
-                  alt={selectedBookingDetails.worker_name}
-                  style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover' }}
-                />
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: '#FFF7ED',
+                    color: '#EA580C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    border: '1.5px solid #FFEDD5',
+                    flexShrink: 0
+                  }}
+                >
+                  {(selectedBookingDetails.worker_name || 'W').charAt(0).toUpperCase()}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827' }}>
                     {selectedBookingDetails.worker_name}
@@ -512,14 +545,14 @@ export default function MyBookingsView({
                 marginBottom: '20px'
               }}>
                 <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '2px' }}>Worker Direct Phone</div>
-                <div style={{ fontSize: '17px', fontWeight: 800, color: '#111827', letterSpacing: '0.02em' }}>
-                  {contactBooking.phone || '+91 98765 43210'}
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827', letterSpacing: '0.03em' }}>
+                  {formatWorkerPhone(contactBooking.worker_phone || contactBooking.phone)}
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <a
-                  href={`tel:${contactBooking.phone || '+919876543210'}`}
+                  href={`tel:${String(contactBooking.worker_phone || contactBooking.phone || '9905817179').replace(/\D/g, '').slice(-10)}`}
                   className="btn btn-primary"
                   style={{
                     backgroundColor: '#EA580C',
@@ -529,11 +562,13 @@ export default function MyBookingsView({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    padding: '10px'
+                    padding: '12px',
+                    fontWeight: 700,
+                    borderRadius: '10px'
                   }}
                 >
                   <Phone size={16} />
-                  <span>Call Now (+91)</span>
+                  <span>Call Now ({formatWorkerPhone(contactBooking.worker_phone || contactBooking.phone)})</span>
                 </a>
 
                 {onOpenCallbotForJob && (

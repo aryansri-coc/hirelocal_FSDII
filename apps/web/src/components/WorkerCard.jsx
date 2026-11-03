@@ -118,16 +118,25 @@ export default function WorkerCard({
       <div className="hl-card-inner">
         {/* 2. WORKER IDENTITY: Avatar Squircle + Clean Name */}
         <div className="hl-identity-row">
-          <div className="hl-avatar-container">
-            <img
-              src={avatarUrl}
-              alt={worker.name}
-              className="hl-avatar-img"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80';
-              }}
-            />
+          <div
+            className="hl-avatar-container"
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              backgroundColor: '#FFF7ED',
+              color: '#EA580C',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: 800,
+              border: '1.5px solid #FFEDD5',
+              position: 'relative',
+              flexShrink: 0
+            }}
+          >
+            {(worker.name || 'W').charAt(0).toUpperCase()}
             <span className="hl-avatar-verified-mark" title="Verified Pro">
               <CheckCircle size={14} fill="#16A34A" color="#FFFFFF" />
             </span>

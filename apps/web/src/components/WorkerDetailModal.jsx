@@ -138,26 +138,24 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
             flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start' }}>
-              {/* Prominent Worker Avatar */}
+              {/* Prominent Worker Initial Avatar */}
               <div style={{
                 position: 'relative',
                 width: '84px',
                 height: '84px',
                 borderRadius: '18px',
-                overflow: 'hidden',
+                backgroundColor: '#FFF7ED',
+                color: '#EA580C',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                fontWeight: 800,
+                border: '2px solid #FFEDD5',
                 flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(21, 26, 36, 0.08)',
-                border: '2px solid #FFFFFF'
+                boxShadow: '0 4px 12px rgba(21, 26, 36, 0.08)'
               }}>
-                <img
-                  src={avatarUrl}
-                  alt={worker.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80';
-                  }}
-                />
+                {(worker.name || 'W').charAt(0).toUpperCase()}
               </div>
 
               <div>
