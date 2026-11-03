@@ -67,3 +67,4 @@ export async function sendJobSmsNotification({ toPhone, message, title = 'Job Up
     return { success: false, error: err.message };
   }
 }
+

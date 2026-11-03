@@ -95,6 +95,8 @@ export default function MyBookingsView({
 
   useEffect(() => {
     loadBookings();
+    const interval = setInterval(loadBookings, 4000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Tab categorization

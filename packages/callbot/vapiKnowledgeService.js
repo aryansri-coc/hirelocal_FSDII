@@ -168,29 +168,46 @@ export async function answerProjectKnowledge(question, context = {}) {
     }
   }
 
-  // Job Offer Acceptance words
+  // Job Offer Acceptance words (Hindi Devanagari, Hinglish, English, Urdu/Arabic script)
   const isJobAcceptance =
     qLower.includes('accept') ||
     qLower.includes('स्वीकार') ||
+    qLower.includes('سویکار') ||
     qLower.includes('swikar') ||
     qLower.includes('swikaar') ||
     qLower.includes('karunga') ||
     qLower.includes('करूँगा') ||
     qLower.includes('करूंगा') ||
+    qLower.includes('کروں گا') ||
     qLower.includes('kaam karunga') ||
     qLower.includes('manzoor') ||
     qLower.includes('मंजूर') ||
+    qLower.includes('منظور') ||
+    qLower.includes('qubool') ||
+    qLower.includes('قبول') ||
+    qLower.includes('theek hai') ||
+    qLower.includes('ठीक है') ||
+    qLower.includes('chalega') ||
+    qLower.includes('चलेगा') ||
     qLower === 'haan' ||
     qLower === 'हाँ' ||
+    qLower === 'ہاں' ||
     qLower.startsWith('haan ') ||
     qLower.startsWith('हाँ ') ||
+    qLower.startsWith('ہاں ') ||
     qLower.includes('haan ji') ||
     qLower.includes('हाँ जी') ||
+    qLower.includes('ji haan') ||
+    qLower.includes('जी हाँ') ||
+    qLower.includes('جی ہاں') ||
+    qLower.includes('جی') ||
+    qLower.includes('जी,') ||
+    qLower.includes('जी ') ||
     qLower === 'yes' ||
     qLower.startsWith('yes ') ||
     qLower.trim() === '1';
 
-  // Job Offer Rejection words
+  // Job Offer Rejection words (Hindi Devanagari, Hinglish, English, Urdu/Arabic script)
   const isJobRejection =
     qLower.includes('reject') ||
     qLower.includes('अस्वीकार') ||
@@ -200,12 +217,18 @@ export async function answerProjectKnowledge(question, context = {}) {
     qLower.includes('nahi karunga') ||
     qLower.includes('नहीं करूँगा') ||
     qLower.includes('नहीं करूंगा') ||
+    qLower.includes('نہیں کروں گا') ||
     qLower.includes('nahi chahiye') ||
     qLower.includes('nahi ho payega') ||
+    qLower.includes('inkar') ||
+    qLower.includes('انکار') ||
+    qLower.includes('منسوخ') ||
     qLower === 'nahi' ||
     qLower === 'नहीं' ||
+    qLower === 'نہیں' ||
     qLower.startsWith('nahi ') ||
     qLower.startsWith('नहीं ') ||
+    qLower.startsWith('نہیں ') ||
     qLower === 'no' ||
     qLower.startsWith('no ') ||
     qLower.trim() === '2';
@@ -967,8 +990,34 @@ export async function respondToJobOfferViaVoice(params = {}, context = {}) {
   }
 
   const rawDecision = String(args.decision || args.action || args.response || args.status || 'accept').toLowerCase();
-  const isAccept = rawDecision.includes('accept') || rawDecision.includes('yes') || rawDecision.includes('ha') || rawDecision.includes('हाँ') || rawDecision.includes('1') || rawDecision.includes('स्वीकार') || rawDecision.includes('karunga');
-  const isReject = rawDecision.includes('reject') || rawDecision.includes('no') || rawDecision.includes('decline') || rawDecision.includes('मना') || rawDecision.includes('2') || rawDecision.includes('अस्वीकार');
+  const isAccept =
+    rawDecision.includes('accept') ||
+    rawDecision.includes('yes') ||
+    rawDecision.includes('ha') ||
+    rawDecision.includes('हाँ') ||
+    rawDecision.includes('ہاں') ||
+    rawDecision.includes('जी') ||
+    rawDecision.includes('جی') ||
+    rawDecision.includes('1') ||
+    rawDecision.includes('स्वीकार') ||
+    rawDecision.includes('سویکار') ||
+    rawDecision.includes('swikar') ||
+    rawDecision.includes('manzoor') ||
+    rawDecision.includes('मंजूर') ||
+    rawDecision.includes('منظور') ||
+    rawDecision.includes('qubool') ||
+    rawDecision.includes('قبول') ||
+    rawDecision.includes('karunga');
+  const isReject =
+    rawDecision.includes('reject') ||
+    rawDecision.includes('no') ||
+    rawDecision.includes('decline') ||
+    rawDecision.includes('मना') ||
+    rawDecision.includes('nahi') ||
+    rawDecision.includes('नहीं') ||
+    rawDecision.includes('نہیں') ||
+    rawDecision.includes('2') ||
+    rawDecision.includes('अस्वीकार');
 
   const lang = String(args.language || voiceSession?.language || 'hi').startsWith('en') ? 'en' : 'hi';
 
