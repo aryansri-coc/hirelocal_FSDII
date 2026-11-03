@@ -13,7 +13,8 @@ import {
   Clock,
   ShieldCheck,
   MessageSquare,
-  Globe
+  Globe,
+  Sparkles
 } from 'lucide-react';
 
 export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
@@ -24,6 +25,7 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
   const isCallbot = worker?.communication_type === 'non_smartphone';
   const firstName = worker?.name ? worker.name.split(' ')[0] : 'Worker';
   const dailyRate = Number(worker?.daily_rate) || 550;
+  const isNewWorker = Number(worker?.completed_jobs || 0) === 0 || String(worker?.worker_id || '').includes('vapi');
 
   // Real or high-resolution fallback avatar
   const avatarUrl = worker?.avatar || (
@@ -193,16 +195,35 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                   color: 'var(--text-secondary)',
                   flexWrap: 'wrap'
                 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: 'var(--text-main)' }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span>{worker.rating ? Number(worker.rating).toFixed(1) : '4.9'}</span>
-                  </span>
-                  <span>•</span>
-                  <span>{worker.completed_jobs || 142} jobs</span>
-                  <span>•</span>
-                  <span style={{ color: 'var(--success)', fontWeight: 600 }}>
-                    {worker.reliability ? `${worker.reliability}% on-time` : '98% on-time'}
-                  </span>
+                  {isNewWorker ? (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#047857',
+                      backgroundColor: '#ECFDF5',
+                      padding: '3px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      <Sparkles size={12} color="#059669" />
+                      <span>New Artisan (0 jobs) · Try Now!</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: 'var(--text-main)' }}>
+                        <Star size={14} fill="#F59E0B" color="#F59E0B" />
+                        <span>{worker.rating ? Number(worker.rating).toFixed(1) : '5.0'}</span>
+                      </span>
+                      <span>•</span>
+                      <span>{worker.completed_jobs} jobs</span>
+                      <span>•</span>
+                      <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                        {worker.reliability ? `${worker.reliability}% on-time` : '98% on-time'}
+                      </span>
+                    </>
+                  )}
                   <span>•</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                     <MapPin size={12} color="#6B7280" />
@@ -420,12 +441,19 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                   border: '1px solid var(--border)',
                   textAlign: 'center'
                 }}>
-                  <Star size={24} color="#F59E0B" style={{ margin: '0 auto 8px', display: 'block' }} />
+                  {isNewWorker ? (
+                    <Sparkles size={24} color="#059669" style={{ margin: '0 auto 8px', display: 'block' }} />
+                  ) : (
+                    <Star size={24} color="#F59E0B" style={{ margin: '0 auto 8px', display: 'block' }} />
+                  )}
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
-                    {worker.rating ? `${worker.rating.toFixed(1)} / 5.0 Baseline Score` : '4.9 / 5.0 Baseline Score'}
+                    {isNewWorker ? 'New Artisan Profile' : (worker.rating ? `${Number(worker.rating).toFixed(1)} / 5.0 Baseline Score` : '5.0 / 5.0 Baseline Score')}
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    {firstName} has successfully delivered {worker.completed_jobs || 142} jobs across the neighborhood with 98% on-time record.
+                    {isNewWorker
+                      ? `${firstName} recently joined HireLocal as a verified ${worker.profession || 'artisan'}. Be the first customer in your neighborhood to hire ${firstName}!`
+                      : `${firstName} has successfully delivered ${worker.completed_jobs} jobs across the neighborhood with ${worker.reliability || 98}% on-time record.`
+                    }
                   </div>
                 </div>
               ) : (
@@ -501,7 +529,7 @@ export default function WorkerDetailModal({ worker, onClose, onBookWorker }) {
                   Service Perimeter
                 </h4>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
-                  Based in <strong>{worker.location?.name || worker.location_name || (worker.pincode ? `PINCODE ${worker.pincode}` : 'MP Nagar (462011)')}</strong>, operating within a <strong>15 km radius</strong> to guarantee prompt morning arrival.
+                  Based in <strong>{worker.location?.name || worker.location_name || (worker.pincode ? `PINCODE ${worker.pincode}` : 'Bajheri, Mohali (140413)')}</strong>, operating within a <strong>15 km radius</strong> to guarantee prompt morning arrival.
                 </p>
               </div>
             </div>

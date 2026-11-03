@@ -222,8 +222,8 @@ export async function registerAsWorker(req, res, next) {
       ? skills.split(',').map((s) => s.trim()).filter(Boolean)
       : [profession];
 
-    const targetPin = (pincode || '462011').toString().trim();
-    let coords = { lat: 23.2332, lng: 77.4343 };
+    const targetPin = (pincode || '140413').toString().trim();
+    let coords = { lat: 30.7516, lng: 76.5912 };
     try {
       const resolved = await getCoordinatesForPincode(targetPin);
       if (resolved && resolved.lat && resolved.lng) {
@@ -418,7 +418,7 @@ export async function updateWorkerProfile(req, res, next) {
     }
 
     // Handle permanent pincode, location, and service radius updates
-    const newPincode = (updates.pincode || (updates.location && updates.location.pincode) || worker.pincode || worker.location?.pincode || '462011').toString().trim();
+    const newPincode = (updates.pincode || (updates.location && updates.location.pincode) || worker.pincode || worker.location?.pincode || '140413').toString().trim();
     let newLocationName = (updates.location_name || (updates.location && updates.location.name) || worker.location_name || worker.location?.name || '').toString().trim();
 
     if (updates.service_radius !== undefined) {

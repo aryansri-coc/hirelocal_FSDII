@@ -19,18 +19,18 @@ import {
 export default function LandingHeroSection({
   onSearch,
   onSelectLocation,
-  currentLocation = 'MP Nagar (462011)'
+  currentLocation = 'Bajheri, Mohali (140413)'
 }) {
   const [searchInput, setSearchInput] = useState('');
   const [pincodeInput, setPincodeInput] = useState(
     typeof currentLocation === 'object' && currentLocation?.pincode
       ? currentLocation.pincode
-      : (typeof currentLocation === 'string' && currentLocation.match(/\d{6}/) ? currentLocation.match(/\d{6}/)[0] : '462011')
+      : (typeof currentLocation === 'string' && currentLocation.match(/\d{6}/) ? currentLocation.match(/\d{6}/)[0] : '140413')
   );
   const [selectedLoc, setSelectedLoc] = useState(
     typeof currentLocation === 'object' && currentLocation?.pincode
       ? `${currentLocation.locality || currentLocation.name} (${currentLocation.pincode})`
-      : (typeof currentLocation === 'string' ? currentLocation : 'MP Nagar (462011)')
+      : (typeof currentLocation === 'string' ? currentLocation : 'Bajheri, Mohali (140413)')
   );
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -351,8 +351,8 @@ export default function LandingHeroSection({
                 <MapPin size={12} /> PINCODE:
               </span>
               {[
+                { pin: '140413', locality: 'Bajheri', district: 'Mohali', label: 'Mohali, Punjab (140413)' },
                 { pin: '462011', locality: 'MP Nagar', district: 'Bhopal', label: 'Bhopal (462011)' },
-                { pin: '140413', locality: 'Bajheri', district: 'Mohali', label: 'Punjab (140413)' },
                 { pin: '824101', locality: 'Aurangabad', district: 'Aurangabad', label: 'Bihar (824101)' },
                 { pin: '110001', locality: 'Connaught Place', district: 'Central Delhi', label: 'Delhi (110001)' },
                 { pin: '400058', locality: 'Andheri West', district: 'Mumbai', label: 'Mumbai (400058)' }

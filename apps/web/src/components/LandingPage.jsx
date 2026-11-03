@@ -107,6 +107,7 @@ const POPULAR_SERVICES_CONFIG = [
 ];
 
 const PAN_INDIA_POPULAR_HUBS = [
+  { name: 'Bajheri / Gharuan', district: 'Mohali', state: 'Punjab', pincode: '140413', label: 'Bajheri, Mohali, Punjab (140413)', city: 'Mohali' },
   { name: 'Connaught Place', district: 'Central Delhi', state: 'Delhi', pincode: '110001', label: 'Connaught Place, Delhi (110001)', city: 'Delhi' },
   { name: 'Andheri West', district: 'Mumbai', state: 'Maharashtra', pincode: '400058', label: 'Andheri West, Mumbai (400058)', city: 'Mumbai' },
   { name: 'Koramangala', district: 'Bengaluru', state: 'Karnataka', pincode: '560034', label: 'Koramangala, Bengaluru (560034)', city: 'Bengaluru' },
@@ -136,14 +137,14 @@ export default function LandingPage({
   selectedLocation,
   onSelectLocation
 }) {
-  const [selectedService, setSelectedService] = useState('Plumber');
+  const [selectedService, setSelectedService] = useState('Electrician');
   const [selectedLocationObj, setSelectedLocationObj] = useState(
-    selectedLocation || { pincode: '462011', locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh', label: 'MP Nagar, Bhopal (462011)' }
+    selectedLocation || { pincode: '140413', locality: 'Bajheri', district: 'Mohali', state: 'Punjab', label: 'Bajheri, Mohali, Punjab (140413)' }
   );
   const [locationQuery, setLocationQuery] = useState(
-    selectedLocation?.label || 'MP Nagar, Bhopal (462011)'
+    selectedLocation?.label || 'Bajheri, Mohali, Punjab (140413)'
   );
-  const [selectedPincode, setSelectedPincode] = useState(selectedLocation?.pincode || '462011');
+  const [selectedPincode, setSelectedPincode] = useState(selectedLocation?.pincode || '140413');
   const [bookingDate, setBookingDate] = useState('Tomorrow');
   const [openDropdown, setOpenDropdown] = useState(null); // 'service' | 'location' | 'date' | null
   const [locationSearchInput, setLocationSearchInput] = useState('');

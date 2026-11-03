@@ -42,18 +42,34 @@ export default function App() {
   const [loadingWorkers, setLoadingWorkers] = useState(true);
 
   // Search & Filter state
-  const [selectedService, setSelectedService] = useState('');
+  const [selectedService, setSelectedService] = useState('Electrician');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCity, setSelectedCity] = useState('Bhopal');
+  const [selectedCity, setSelectedCity] = useState('Mohali');
   const [selectedLocation, setSelectedLocation] = useState({
-    pincode: '462011',
-    locality: 'MP Nagar',
-    district: 'Bhopal',
-    state: 'Madhya Pradesh',
-    label: 'MP Nagar, Bhopal (462011)'
+    pincode: '140413',
+    locality: 'Bajheri',
+    district: 'Mohali',
+    state: 'Punjab',
+    label: 'Bajheri, Mohali, Punjab (140413)'
   });
   const [commTypeFilter, setCommTypeFilter] = useState('');
   const [matchingDate, setMatchingDate] = useState('');
+
+  // Sync location if logged in user has an address
+  useEffect(() => {
+    if (user && user.address) {
+      const pinMatch = user.address.match(/\b\d{6}\b/);
+      const pin = pinMatch ? pinMatch[0] : '140413';
+      setSelectedLocation({
+        pincode: pin,
+        locality: user.address.includes('Bajheri') ? 'Bajheri' : user.address.split(',')[0]?.trim() || 'Bajheri',
+        district: 'Mohali',
+        state: 'Punjab',
+        label: user.address.includes('(') ? user.address : `${user.address} (${pin})`
+      });
+      setSelectedCity('Mohali');
+    }
+  }, [user]);
 
   const handleSelectLocation = (loc) => {
     setSelectedLocation(loc);
@@ -425,6 +441,10 @@ export default function App() {
           defaultService={bookingWorker.profession}
           selectedLocation={selectedLocation}
           onClose={() => setBookingWorker(null)}
+          onOpenCallbotForJob={(job) => {
+            setBookingWorker(null);
+            handleOpenCallbotForJob(job);
+          }}
           onJobCreated={() => {
             setActiveTab('customer_bookings');
           }}

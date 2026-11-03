@@ -51,7 +51,7 @@ export default function Navbar({
   const [currentLocLabel, setCurrentLocLabel] = useState(
     selectedLocation?.pincode
       ? `${selectedLocation.locality || selectedLocation.name} (${selectedLocation.pincode})`
-      : 'MP Nagar (462011)'
+      : 'Bajheri, Mohali (140413)'
   );
 
   const locDropdownRef = useRef(null);
@@ -329,7 +329,7 @@ export default function Navbar({
               {isLocDropdownOpen && (
                 <div className="hl-pincode-popover-container">
                   <PincodeAddressSelector
-                    selectedPincode={selectedLocation?.pincode || '462011'}
+                    selectedPincode={selectedLocation?.pincode || '140413'}
                     selectedAddress={selectedLocation}
                     onSelect={handleSelectLoc}
                     onClose={() => setIsLocDropdownOpen(false)}
@@ -619,7 +619,7 @@ export default function Navbar({
               {isLocDropdownOpen && (
                 <div style={{ marginTop: '6px' }}>
                   <PincodeAddressSelector
-                    selectedPincode={selectedLocation?.pincode || '462011'}
+                    selectedPincode={selectedLocation?.pincode || '140413'}
                     selectedAddress={selectedLocation}
                     onSelect={(addr) => {
                       handleSelectLoc(addr);

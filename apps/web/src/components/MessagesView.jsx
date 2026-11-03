@@ -9,109 +9,18 @@ import {
   ShieldCheck,
   Calendar,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  MessageSquare,
+  Users
 } from 'lucide-react';
 
-const INITIAL_CONVERSATIONS = [
-  {
-    id: 'conv_1',
-    workerId: 'wrk_elec_1',
-    name: 'Mukesh Sharma',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service: 'House Wiring & MCB',
-    online: true,
-    lastMessage: 'Namaste! I will reach your location tomorrow by 9:30 AM.',
-    time: '10:45 AM',
-    unreadCount: 1,
-    messages: [
-      {
-        id: 'm1',
-        sender: 'user',
-        text: 'Hello Mukesh ji, is tomorrow morning convenient for the MCB tripping issue?',
-        time: '10:30 AM'
-      },
-      {
-        id: 'm2',
-        sender: 'worker',
-        text: 'Namaste! Yes, tomorrow morning works well. I have tools and standard 16A/32A MCB units available.',
-        time: '10:38 AM'
-      },
-      {
-        id: 'm3',
-        sender: 'user',
-        text: 'Great, the location is Flat 402, Shalimar Heights, Govindpura.',
-        time: '10:40 AM'
-      },
-      {
-        id: 'm4',
-        sender: 'worker',
-        text: 'Namaste! I will reach your location tomorrow by 9:30 AM.',
-        time: '10:45 AM'
-      }
-    ]
-  },
-  {
-    id: 'conv_2',
-    workerId: 'wrk_elec_2',
-    name: 'Sunil Verma',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service: 'Fan Installation',
-    online: false,
-    lastMessage: 'All set for Wednesday afternoon appointment.',
-    time: 'Yesterday',
-    unreadCount: 0,
-    messages: [
-      {
-        id: 'm1',
-        sender: 'user',
-        text: 'Hi Sunil, do I need to buy the downrod and regulator beforehand?',
-        time: 'Yesterday 3:15 PM'
-      },
-      {
-        id: 'm2',
-        sender: 'worker',
-        text: 'Please keep the fan box ready. I will bring standard anchor bolts and wiring.',
-        time: 'Yesterday 3:20 PM'
-      },
-      {
-        id: 'm3',
-        sender: 'worker',
-        text: 'All set for Wednesday afternoon appointment.',
-        time: 'Yesterday 3:22 PM'
-      }
-    ]
-  },
-  {
-    id: 'conv_3',
-    workerId: 'wrk_elec_5',
-    name: 'Rakesh Singh',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service: 'Switchboard Repair',
-    online: true,
-    lastMessage: 'Job completed. Thanks for the quick settlement!',
-    time: 'Sep 26',
-    unreadCount: 0,
-    messages: [
-      {
-        id: 'm1',
-        sender: 'worker',
-        text: 'Job completed. Thanks for the quick settlement!',
-        time: 'Sep 26 4:10 PM'
-      }
-    ]
-  }
-];
-
 export default function MessagesView({ onFindWorker }) {
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
-  const [selectedConvId, setSelectedConvId] = useState('conv_1');
+  const [conversations, setConversations] = useState([]);
+  const [selectedConvId, setSelectedConvId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMessage, setInputMessage] = useState('');
 
-  const activeConv = conversations.find((c) => c.id === selectedConvId) || conversations[0];
+  const activeConv = conversations.find((c) => c.id === selectedConvId) || conversations[0] || null;
 
   const filteredConversations = conversations.filter((c) => {
     if (!searchQuery.trim()) return true;
@@ -215,84 +124,92 @@ export default function MessagesView({ onFindWorker }) {
 
             {/* Conversation Threads */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              {filteredConversations.map((conv) => {
-                const isSelected = conv.id === activeConv.id;
-                return (
-                  <div
-                    key={conv.id}
-                    onClick={() => setSelectedConvId(conv.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 18px',
-                      borderBottom: '1px solid var(--border)',
-                      backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.15s ease',
-                      borderLeft: isSelected ? '3px solid var(--primary)' : '3px solid transparent'
-                    }}
-                  >
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <img
-                        src={conv.avatar}
-                        alt={conv.name}
-                        style={{
-                          width: '46px',
-                          height: '46px',
-                          borderRadius: '12px',
-                          objectFit: 'cover'
-                        }}
-                      />
-                      {conv.online && (
-                        <span style={{
-                          position: 'absolute',
-                          bottom: '-1px',
-                          right: '-1px',
-                          width: '11px',
-                          height: '11px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--success)',
-                          border: '2px solid #FFFFFF'
-                        }} />
-                      )}
-                    </div>
+              {filteredConversations.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <MessageSquare size={32} style={{ opacity: 0.35, margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: '13px', margin: 0, fontWeight: 600 }}>No conversations</p>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Chat with workers after booking</span>
+                </div>
+              ) : (
+                filteredConversations.map((conv) => {
+                  const isSelected = activeConv && conv.id === activeConv.id;
+                  return (
+                    <div
+                      key={conv.id}
+                      onClick={() => setSelectedConvId(conv.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '14px 18px',
+                        borderBottom: '1px solid var(--border)',
+                        backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.15s ease',
+                        borderLeft: isSelected ? '3px solid var(--primary)' : '3px solid transparent'
+                      }}
+                    >
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <img
+                          src={conv.avatar}
+                          alt={conv.name}
+                          style={{
+                            width: '46px',
+                            height: '46px',
+                            borderRadius: '12px',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        {conv.online && (
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '-1px',
+                            right: '-1px',
+                            width: '11px',
+                            height: '11px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--success)',
+                            border: '2px solid #FFFFFF'
+                          }} />
+                        )}
+                      </div>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                        <h4 style={{
-                          fontSize: '14px',
-                          fontWeight: 700,
-                          color: 'var(--text-main)',
-                          margin: 0,
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                          <h4 style={{
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: 'var(--text-main)',
+                            margin: 0,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {conv.name}
+                          </h4>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                            {conv.time}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '11.5px', color: 'var(--primary)', fontWeight: 600, marginBottom: '2px' }}>
+                          {conv.service}
+                        </div>
+
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {conv.name}
-                        </h4>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>
-                          {conv.time}
-                        </span>
-                      </div>
-
-                      <div style={{ fontSize: '11.5px', color: 'var(--primary)', fontWeight: 600, marginBottom: '2px' }}>
-                        {conv.service}
-                      </div>
-
-                      <div style={{
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {conv.lastMessage}
+                          {conv.lastMessage}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </aside>
 
@@ -303,75 +220,117 @@ export default function MessagesView({ onFindWorker }) {
             backgroundColor: '#FFFFFF',
             position: 'relative'
           }}>
-            {/* Active Chat Header */}
-            <div style={{
-              padding: '16px 24px',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#FFFFFF'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img
-                  src={activeConv.avatar}
-                  alt={activeConv.name}
-                  style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
-                    objectFit: 'cover'
-                  }}
-                />
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                      {activeConv.name}
-                    </h3>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      fontSize: '10.5px',
-                      fontWeight: 600,
-                      color: 'var(--success)'
-                    }}>
-                      <ShieldCheck size={12} />
-                      <span>Verified</span>
-                    </span>
+            {!activeConv ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                padding: '40px 24px',
+                textAlign: 'center',
+                backgroundColor: '#FAFAF9'
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary-light)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <MessageSquare size={30} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
+                  No Active Messages
+                </h3>
+                <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', maxWidth: '380px', lineHeight: 1.5, marginBottom: '20px' }}>
+                  Direct messages with verified local technicians and craftsmen will appear here once you book or initiate a query.
+                </p>
+                {onFindWorker && (
+                  <button
+                    onClick={onFindWorker}
+                    className="btn btn-primary"
+                    style={{ padding: '10px 22px', borderRadius: '10px', fontSize: '13.5px' }}
+                  >
+                    Find Local Craftsmen
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Active Chat Header */}
+                <div style={{
+                  padding: '16px 24px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#FFFFFF'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img
+                      src={activeConv.avatar}
+                      alt={activeConv.name}
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
+                        objectFit: 'cover'
+                      }}
+                    />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                          {activeConv.name}
+                        </h3>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontSize: '10.5px',
+                          fontWeight: 600,
+                          color: 'var(--success)'
+                        }}>
+                          <ShieldCheck size={12} />
+                          <span>Verified</span>
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {activeConv.profession} •{' '}
+                        <span style={{ color: activeConv.online ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600 }}>
+                          {activeConv.online ? 'Online' : 'Active today'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {activeConv.profession} •{' '}
-                    <span style={{ color: activeConv.online ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600 }}>
-                      {activeConv.online ? 'Online' : 'Active today'}
-                    </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <a
+                      href="tel:+917552400100"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        backgroundColor: 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <Phone size={14} />
+                      <span>Call Worker</span>
+                    </a>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <a
-                  href="tel:+917552400100"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--primary-light)',
-                    color: 'var(--primary)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textDecoration: 'none'
-                  }}
-                >
-                  <Phone size={14} />
-                  <span>Call Worker</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Message Thread Scroll Area */}
+                {/* Message Thread Scroll Area */}
             <div style={{
               flex: 1,
               padding: '24px',
@@ -519,7 +478,9 @@ export default function MessagesView({ onFindWorker }) {
                 <Send size={15} />
               </button>
             </form>
-          </main>
+          </>
+        )}
+      </main>
         </div>
       </div>
     </div>

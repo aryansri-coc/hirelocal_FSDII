@@ -4,6 +4,7 @@ import {
   processJobCallStep,
   processRegistrationCallStep,
   processCustomerCallStep,
+  processWorkerLoginCallStep,
   LOCALIZED_SCRIPTS
 } from '../../../../packages/callbot/dialogueEngine.js';
 import { JOB_STATUS } from '../../../../packages/shared/statusVocabulary.js';
@@ -96,6 +97,17 @@ export async function startCallSession(req, res, next) {
       initialStep = processRegistrationCallStep(session, null);
     } else if (mode === 'customer_order') {
       initialStep = processCustomerCallStep(session, null);
+    } else if (mode === 'worker_login') {
+      const searchPhone = (phone || '').replace(/^\+91/, '').trim();
+      worker = db.findOne('workers', (w) => (w.phone || '').includes(searchPhone));
+      if (!worker && searchPhone) {
+        const u = db.findOne('users', (u) => (u.phone || '').includes(searchPhone) && u.role === 'worker');
+        if (u) {
+          worker = db.findOne('workers', (w) => w.user_id === u.user_id) || { worker_id: 'wrk_' + u.user_id, name: u.name, phone: u.phone };
+        }
+      }
+      session.workerName = worker?.name || 'साथी';
+      initialStep = processWorkerLoginCallStep(session, null);
     } else {
       initialStep = processJobCallStep(session, null);
     }
@@ -159,7 +171,36 @@ export async function processCallStep(req, res, next) {
     let stepResult;
 
     // Route step to appropriate state machine processor
-    if (session.mode === 'registration') {
+    if (session.mode === 'worker_login') {
+      stepResult = processWorkerLoginCallStep(session, userInput);
+
+      if (stepResult.action === 'EXECUTE_LOGIN') {
+        const workerPhone = (stepResult.workerPhone || session.phone || '').replace(/^\+91/, '').trim();
+        let workerUser = db.findOne('users', (u) => (u.phone || '').includes(workerPhone) && u.role === 'worker') ||
+                         db.findOne('users', (u) => (u.phone || '').includes(workerPhone));
+        let workerProfile = db.findOne('workers', (w) => (w.phone || '').includes(workerPhone) || w.user_id === workerUser?.user_id);
+
+        if (!workerUser && workerProfile) {
+          workerUser = db.findById('users', 'user_id', workerProfile.user_id);
+        }
+
+        const token = workerUser ? `token_${workerUser.user_id}` : `token_wrk_${Date.now()}`;
+        stepResult.loginAuth = {
+          token,
+          user: workerUser || { user_id: 'usr_wrk', name: stepResult.workerName || 'Worker', phone: workerPhone, role: 'worker' },
+          worker: workerProfile || null
+        };
+
+        db.addAuditLog({
+          actorId: workerUser?.user_id || 'worker',
+          actorName: workerUser?.name || 'Worker',
+          action: 'WORKER_LOGGED_IN_VIA_VOICE_CALL',
+          entityType: 'worker',
+          entityId: workerProfile?.worker_id || workerUser?.user_id || 'wrk',
+          source: 'callbot'
+        });
+      }
+    } else if (session.mode === 'registration') {
       stepResult = processRegistrationCallStep(session, userInput);
 
       // Execute worker registration into database
@@ -347,9 +388,11 @@ export async function processCallStep(req, res, next) {
     return res.json({
       success: true,
       sessionId,
+      language: session.language,
       step: stepResult,
       isComplete: stepResult.isComplete,
-      conversationLog: session.callLog
+      conversationLog: session.callLog,
+      loginAuth: stepResult.loginAuth || null
     });
   } catch (err) {
     next(err);
@@ -436,6 +479,81 @@ export async function getCallLogs(req, res, next) {
       count: logs.length,
       data: logs
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Checks for any active incoming CallBot job offer call for the authenticated worker
+ */
+export async function getIncomingWorkerCall(req, res, next) {
+  try {
+    const user = req.user;
+    let worker = req.worker || (user ? db.findOne('workers', (w) => w.user_id === user.user_id) : null);
+    if (!worker) {
+      worker = db.findById('workers', 'worker_id', 'wrk_1') || db.findOne('workers', (w) => w.profession === 'Electrician');
+    }
+    if (!worker) {
+      return res.json({ success: true, hasIncomingCall: false });
+    }
+
+    const workerPhone = (worker.phone || '').replace(/^\+91/, '').trim();
+
+    // Check in-memory active call sessions
+    for (const [sessionId, session] of activeSessions.entries()) {
+      const sessPhone = (session.phone || session.workerPhone || '').replace(/^\+91/, '').trim();
+      const matchWorker = (workerPhone && sessPhone.includes(workerPhone)) || (session.job && session.job.worker_id === worker.worker_id);
+
+      if (matchWorker && session.status === 'active' && session.mode === 'job_notification') {
+        return res.json({
+          success: true,
+          hasIncomingCall: true,
+          sessionId,
+          mode: session.mode,
+          job: session.job,
+          customer: session.customer,
+          workerName: session.workerName,
+          language: session.language || 'hi'
+        });
+      }
+    }
+
+    // Also check database jobs if there is a pending job for this worker that hasn't completed
+    const pendingJobs = db.find('jobs', (j) => j.worker_id === worker.worker_id && j.status === JOB_STATUS.PENDING_WORKER_RESPONSE);
+    if (pendingJobs.length > 0) {
+      const targetJob = pendingJobs[0];
+      const customer = targetJob.customer_id ? db.findById('users', 'user_id', targetJob.customer_id) : null;
+      
+      let existingSession = null;
+      for (const [sId, sess] of activeSessions.entries()) {
+        if (sess.job?.job_id === targetJob.job_id) {
+          existingSession = { sessionId: sId, session: sess };
+          break;
+        }
+      }
+
+      const sid = existingSession ? existingSession.sessionId : `call_${Date.now()}_incoming`;
+      if (!existingSession) {
+        const newSess = new CallSession(sid, worker.phone || '+919820100000', 'job_notification', targetJob, customer);
+        newSess.workerName = worker.name || 'Worker';
+        newSess.language = worker.language || 'hi';
+        activeSessions.set(sid, newSess);
+      }
+
+      return res.json({
+        success: true,
+        hasIncomingCall: true,
+        sessionId: sid,
+        mode: 'job_notification',
+        job: targetJob,
+        customer,
+        workerName: worker.name,
+        language: worker.language || 'hi'
+      });
+    }
+
+    return res.json({ success: true, hasIncomingCall: false });
   } catch (err) {
     next(err);
   }

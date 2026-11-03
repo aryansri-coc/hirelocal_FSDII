@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function PincodeAddressSelector({
-  selectedPincode = '462011',
+  selectedPincode = '140413',
   selectedAddress = null,
   onSelect,
   onClose,
@@ -22,7 +22,7 @@ export default function PincodeAddressSelector({
   showPopularChips = true
 }) {
   const [searchInput, setSearchInput] = useState(selectedPincode || '');
-  const [activePincode, setActivePincode] = useState(selectedPincode || '462011');
+  const [activePincode, setActivePincode] = useState(selectedPincode || '140413');
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -268,7 +268,7 @@ export default function PincodeAddressSelector({
             className="form-input"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Enter 6-digit PINCODE (e.g. 462011, 110001)..."
+            placeholder="Enter 6-digit PINCODE (e.g. 140413, 110001)..."
             style={{
               paddingLeft: '34px',
               paddingRight: searchInput ? '32px' : '12px',

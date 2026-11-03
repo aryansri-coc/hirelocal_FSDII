@@ -37,24 +37,24 @@ import {
 // =========================================================
 export const TRADE_CATEGORIES = [
   {
-    id: 'plumber',
-    name: 'Plumber',
-    slug: 'plumber',
-    Icon: Wrench,
-    className: 'hl-trade-card-plumber',
-    color: '#0284C7', // Sky / Ocean Blue Water Theme
-    tagline: 'Leaks, sanitary, tap fittings & pumps',
-    badge: '5 Pros'
-  },
-  {
     id: 'electrician',
     name: 'Electrician',
     slug: 'electrician',
     Icon: Zap,
     className: 'hl-trade-card-electrician',
-    color: '#2563EB', // Blue as explicitly requested
+    color: '#2563EB',
     tagline: 'Wiring, MCB, fans, switchboards & inverters',
-    badge: '6 Pros'
+    badge: '1 Pro'
+  },
+  {
+    id: 'plumber',
+    name: 'Plumber',
+    slug: 'plumber',
+    Icon: Wrench,
+    className: 'hl-trade-card-plumber',
+    color: '#0284C7',
+    tagline: 'Leaks, sanitary, tap fittings & pumps',
+    badge: '0 Pros'
   },
   {
     id: 'mechanic',
@@ -64,7 +64,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-mechanic',
     color: '#DC2626',
     tagline: 'AC servicing, compressor, motor & pumps',
-    badge: '5 Pros'
+    badge: '0 Pros'
   },
   {
     id: 'carpenter',
@@ -74,7 +74,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-carpenter',
     color: '#D97706',
     tagline: 'Furniture repair, locks, custom woodwork',
-    badge: '4 Pros'
+    badge: '0 Pros'
   },
   {
     id: 'painter',
@@ -84,7 +84,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-painter',
     color: '#16A34A',
     tagline: 'Interior/exterior putty, waterproof, textures',
-    badge: '4 Pros'
+    badge: '0 Pros'
   },
   {
     id: 'appliance',
@@ -94,7 +94,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-appliance',
     color: '#7C3AED',
     tagline: 'Washing machine, fridge, microwave, RO',
-    badge: '4 Pros'
+    badge: '0 Pros'
   },
   {
     id: 'cleaning',
@@ -104,555 +104,9 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-cleaning',
     color: '#0D9488',
     tagline: 'Full home, kitchen, bathroom sanitization',
-    badge: '3 Pros'
+    badge: '0 Pros'
   }
 ];
-
-// Comprehensive worker catalog by profession
-const TRADE_WORKERS_CATALOG = {
-  electrician: [
-    {
-      worker_id: 'wrk_elec_1',
-      name: 'Mukesh Sharma',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 11,
-      rating: 4.9,
-      completed_jobs: 142,
-      reliability: 98,
-      distance_km: 2.4,
-      daily_rate: 550,
-      hourly_rate: 69,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['House Wiring', 'MCB Installation', 'Fan Installation', '+2'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_elec_2',
-      name: 'Vijay Prasad',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 10,
-      rating: 4.8,
-      completed_jobs: 98,
-      reliability: 96,
-      distance_km: 5.2,
-      daily_rate: 650,
-      hourly_rate: 81,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['House Wiring', 'Commercial Wiring', 'Lighting'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_elec_3',
-      name: 'Rohit Kumar',
-      avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 6,
-      rating: 4.7,
-      completed_jobs: 88,
-      reliability: 94,
-      distance_km: 4.8,
-      daily_rate: 500,
-      hourly_rate: 63,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['House Wiring', 'AC Point Installation', 'MCB / Switches', '+1'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_elec_4',
-      name: 'Amit Yadav',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 8,
-      rating: 4.6,
-      completed_jobs: 112,
-      reliability: 92,
-      distance_km: 1.9,
-      daily_rate: 600,
-      hourly_rate: 75,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['House Wiring', 'Fan Installation', 'Lighting'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_elec_5',
-      name: 'Sunil Verma',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 4,
-      rating: 4.5,
-      completed_jobs: 40,
-      reliability: 89,
-      distance_km: 3.1,
-      daily_rate: 450,
-      hourly_rate: 56,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Switchboard Upgrade', 'LED Lighting', 'Earthing Check'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_elec_6',
-      name: 'Rakesh Singh',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
-      profession: 'Electrician',
-      experience: 5,
-      rating: 4.4,
-      completed_jobs: 67,
-      reliability: 90,
-      distance_km: 3.5,
-      daily_rate: 480,
-      hourly_rate: 60,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['MCB / Switches', 'LED Lighting', 'Earthing Check'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  plumber: [
-    {
-      worker_id: 'wrk_plumb_1',
-      name: 'Ramesh Kumar',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Plumber',
-      experience: 9,
-      rating: 4.9,
-      completed_jobs: 134,
-      reliability: 97,
-      distance_km: 1.8,
-      daily_rate: 550,
-      hourly_rate: 69,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Pipe Leaks', 'Sanitary Ware', 'Tap Fittings', 'Water Tank'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_plumb_2',
-      name: 'Deepak Jha',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      profession: 'Plumber',
-      experience: 7,
-      rating: 4.8,
-      completed_jobs: 92,
-      reliability: 95,
-      distance_km: 3.4,
-      daily_rate: 600,
-      hourly_rate: 75,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Bathroom Renovation', 'Geyser Piping', 'Drainage'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_plumb_3',
-      name: 'Rajesh Verma',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80',
-      profession: 'Plumber',
-      experience: 5,
-      rating: 4.6,
-      completed_jobs: 64,
-      reliability: 91,
-      distance_km: 4.1,
-      daily_rate: 480,
-      hourly_rate: 60,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Tap Fitting', 'Motor Installation', 'Water Pump'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_plumb_4',
-      name: 'Manoj Kumar',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
-      profession: 'Plumber',
-      experience: 8,
-      rating: 4.7,
-      completed_jobs: 105,
-      reliability: 93,
-      distance_km: 2.7,
-      daily_rate: 520,
-      hourly_rate: 65,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Pipeline Repair', 'Flush Tank', 'Sink Fitting'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_plumb_5',
-      name: 'Santosh Mishra',
-      avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&auto=format&fit=crop&q=80',
-      profession: 'Plumber',
-      experience: 12,
-      rating: 4.9,
-      completed_jobs: 168,
-      reliability: 98,
-      distance_km: 5.0,
-      daily_rate: 650,
-      hourly_rate: 81,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Main Pipeline', 'Underground Leaks', 'Commercial Plumbing'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  mechanic: [
-    {
-      worker_id: 'wrk_mech_1',
-      name: 'Sameer Khan',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Mechanic',
-      experience: 8,
-      rating: 4.9,
-      completed_jobs: 128,
-      reliability: 98,
-      distance_km: 2.1,
-      daily_rate: 700,
-      hourly_rate: 88,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Split AC Servicing', 'Gas Refill', 'Compressor Repair', '+1'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_mech_2',
-      name: 'Ajay Sen',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
-      profession: 'Mechanic',
-      experience: 6,
-      rating: 4.7,
-      completed_jobs: 84,
-      reliability: 94,
-      distance_km: 3.8,
-      daily_rate: 650,
-      hourly_rate: 81,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Inverter AC PCB Check', 'Duct Cleaning', 'Installation'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_mech_3',
-      name: 'Vikram Rathore',
-      avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80',
-      profession: 'Mechanic',
-      experience: 10,
-      rating: 4.8,
-      completed_jobs: 142,
-      reliability: 96,
-      distance_km: 4.5,
-      daily_rate: 750,
-      hourly_rate: 94,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Commercial HVAC', 'Gas Leakage', 'Heavy Compressor'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_mech_4',
-      name: 'Dinesh Yadav',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Mechanic',
-      experience: 5,
-      rating: 4.5,
-      completed_jobs: 58,
-      reliability: 90,
-      distance_km: 2.9,
-      daily_rate: 580,
-      hourly_rate: 72,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Window AC Fix', 'Filter Wash', 'Coil Soldering'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_mech_5',
-      name: 'Imran Ali',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
-      profession: 'Mechanic',
-      experience: 7,
-      rating: 4.6,
-      completed_jobs: 91,
-      reliability: 92,
-      distance_km: 3.2,
-      daily_rate: 620,
-      hourly_rate: 77,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['AC Installation', 'Copper Piping', 'Thermostat Setup'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  carpenter: [
-    {
-      worker_id: 'wrk_carp_1',
-      name: 'Suresh Carpenter',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Carpenter',
-      experience: 9,
-      rating: 4.8,
-      completed_jobs: 115,
-      reliability: 96,
-      distance_km: 2.6,
-      daily_rate: 700,
-      hourly_rate: 88,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Furniture Repair', 'Modular Kitchen', 'Door Hinges & Locks'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_carp_2',
-      name: 'Harish Mistry',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Carpenter',
-      experience: 12,
-      rating: 4.9,
-      completed_jobs: 172,
-      reliability: 98,
-      distance_km: 4.2,
-      daily_rate: 750,
-      hourly_rate: 94,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Custom Wardrobe', 'Wooden Flooring', 'Sliding Doors'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_carp_3',
-      name: 'Vinod Sharma',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      profession: 'Carpenter',
-      experience: 6,
-      rating: 4.6,
-      completed_jobs: 78,
-      reliability: 92,
-      distance_km: 3.1,
-      daily_rate: 600,
-      hourly_rate: 75,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Bed Assembly', 'Drawer Repair', 'Chair Fixing'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_carp_4',
-      name: 'Babloo Prajapati',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80',
-      profession: 'Carpenter',
-      experience: 8,
-      rating: 4.7,
-      completed_jobs: 98,
-      reliability: 94,
-      distance_km: 1.9,
-      daily_rate: 650,
-      hourly_rate: 81,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Wood Polishing', 'Lock Replacement', 'Shelving Units'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  painter: [
-    {
-      worker_id: 'wrk_paint_1',
-      name: 'Raju Painter',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Painter',
-      experience: 10,
-      rating: 4.8,
-      completed_jobs: 136,
-      reliability: 96,
-      distance_km: 2.5,
-      daily_rate: 650,
-      hourly_rate: 81,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Interior Walls', 'Waterproof Putty', 'Royal Luxury Finish'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_paint_2',
-      name: 'Gopal Sen',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Painter',
-      experience: 7,
-      rating: 4.7,
-      completed_jobs: 89,
-      reliability: 93,
-      distance_km: 3.7,
-      daily_rate: 600,
-      hourly_rate: 75,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Exterior Weatherproof', 'Enamel Polish', 'Primer Coat'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_paint_3',
-      name: 'Sanjay Kushwaha',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
-      profession: 'Painter',
-      experience: 8,
-      rating: 4.6,
-      completed_jobs: 102,
-      reliability: 91,
-      distance_km: 4.4,
-      daily_rate: 580,
-      hourly_rate: 72,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Texture Design', 'Stencil Painting', 'Ceiling Coat'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_paint_4',
-      name: 'Prem Kumar',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80',
-      profession: 'Painter',
-      experience: 5,
-      rating: 4.5,
-      completed_jobs: 61,
-      reliability: 89,
-      distance_km: 2.2,
-      daily_rate: 520,
-      hourly_rate: 65,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Wall Putty', 'Damp Treatment', 'Door Painting'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  appliance: [
-    {
-      worker_id: 'wrk_app_1',
-      name: 'Vikas Sharma',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
-      profession: 'Appliance Repair',
-      experience: 8,
-      rating: 4.8,
-      completed_jobs: 114,
-      reliability: 96,
-      distance_km: 2.8,
-      daily_rate: 600,
-      hourly_rate: 75,
-      communication_type: 'smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Washing Machine Drum', 'Refrigerator Cooling', 'Microwave PCB'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_app_2',
-      name: 'Arvind Kumar',
-      avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80',
-      profession: 'Appliance Repair',
-      experience: 6,
-      rating: 4.7,
-      completed_jobs: 82,
-      reliability: 94,
-      distance_km: 3.5,
-      daily_rate: 550,
-      hourly_rate: 69,
-      communication_type: 'non_smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['RO Water Purifier', 'Geyser Heating Element', 'Inverter Setup'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_app_3',
-      name: 'Nitin Chawla',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
-      profession: 'Appliance Repair',
-      experience: 9,
-      rating: 4.9,
-      completed_jobs: 140,
-      reliability: 97,
-      distance_km: 4.6,
-      daily_rate: 680,
-      hourly_rate: 85,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Front Load Washer', 'Double Door Fridge', 'Induction Cooktop'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ],
-
-  cleaning: [
-    {
-      worker_id: 'wrk_clean_1',
-      name: 'Sunita Bai & Team',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      profession: 'Deep Cleaning',
-      experience: 6,
-      rating: 4.9,
-      completed_jobs: 126,
-      reliability: 98,
-      distance_km: 2.0,
-      daily_rate: 800,
-      hourly_rate: 100,
-      communication_type: 'non_smartphone',
-      isRecommended: true,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Full Home Sanitization', 'Kitchen Degreasing', 'Bathroom Scrubbing'],
-      location: { name: 'Govindpura, Bihar' }
-    },
-    {
-      worker_id: 'wrk_clean_2',
-      name: 'Anita Devi',
-      avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&auto=format&fit=crop&q=80',
-      profession: 'Deep Cleaning',
-      experience: 5,
-      rating: 4.8,
-      completed_jobs: 90,
-      reliability: 95,
-      distance_km: 3.3,
-      daily_rate: 750,
-      hourly_rate: 94,
-      communication_type: 'smartphone',
-      isRecommended: false,
-      availableStatus: 'Available for tomorrow',
-      skills: ['Sofa Shampooing', 'Floor Machine Buffing', 'Balcony Deep Clean'],
-      location: { name: 'Govindpura, Bihar' }
-    }
-  ]
-};
 
 export default function FindWorkersView({
   workers = [],
@@ -661,7 +115,7 @@ export default function FindWorkersView({
   onSelectWorker,
   onBookWorker,
   onSelectService,
-  selectedLocation = { pincode: '462011', locality: 'MP Nagar', district: 'Bhopal', label: 'MP Nagar (462011)' },
+  selectedLocation = { pincode: '140413', locality: 'Bajheri', district: 'Mohali', state: 'Punjab', label: 'Bajheri, Mohali (140413)' },
   onSelectLocation,
   isLandingPageSection = false
 }) {
@@ -674,7 +128,7 @@ export default function FindWorkersView({
     if (s.includes('paint')) return 'painter';
     if (s.includes('appliance')) return 'appliance';
     if (s.includes('clean')) return 'cleaning';
-    return 'plumber';
+    return 'electrician';
   }, [selectedService]);
 
   const [activeTradeId, setActiveTradeId] = useState(initialTradeId);
@@ -744,11 +198,11 @@ export default function FindWorkersView({
 
   const locPincode = typeof selectedLocState === 'object' && selectedLocState?.pincode
     ? selectedLocState.pincode
-    : (typeof selectedLocState === 'string' ? selectedLocState.match(/\d{6}/)?.[0] || '462011' : '462011');
+    : (typeof selectedLocState === 'string' ? selectedLocState.match(/\d{6}/)?.[0] || '140413' : '140413');
 
   const locName = typeof selectedLocState === 'object'
     ? (selectedLocState.locality || selectedLocState.name || selectedLocState.district || 'MP Nagar')
-    : (typeof selectedLocState === 'string' ? selectedLocState.split('(')[0]?.trim() || 'MP Nagar' : 'MP Nagar');
+    : (typeof selectedLocState === 'string' ? selectedLocState.split('(')[0]?.trim() || 'Bajheri' : 'Bajheri');
 
   const handleSelectLoc = (addr) => {
     setSelectedLocState(addr);
@@ -830,44 +284,28 @@ export default function FindWorkersView({
     }
   };
 
-  // Combine static catalog for this trade with any dynamically fetched workers
+  // Live verified workers from the database / API matching the active trade
   const currentTradeWorkers = useMemo(() => {
-    const baseList = TRADE_WORKERS_CATALOG[activeTradeId] || TRADE_WORKERS_CATALOG.electrician;
-    const merged = baseList.map((m, idx) => ({
-      ...m,
-      distance_km: (1.2 + (idx * 0.7)).toFixed(1),
-      location: {
-        name: `${locName} (${locPincode})`,
-        pincode: locPincode,
-        district: typeof selectedLocState === 'object' ? selectedLocState.district : 'Bhopal'
-      }
-    }));
+    if (!workers || workers.length === 0) return [];
 
-    if (workers && workers.length > 0) {
-      workers.forEach((w) => {
+    return workers
+      .filter((w) => {
         const prof = (w.profession || '').toLowerCase();
-        const matchesTrade =
+        return (
           prof.includes(activeTradeId) ||
           (activeTradeId === 'mechanic' && (prof.includes('ac') || prof.includes('mechanic'))) ||
-          prof.includes(activeTrade.name.toLowerCase());
-
-        if (matchesTrade && !merged.some((m) => m.name === w.name)) {
-          merged.push({
-            ...w,
-            hourly_rate: Math.round((Number(w.daily_rate) || 500) / 8),
-            distance_km: w.distance_km || (1.5 + (merged.length * 0.4)).toFixed(1),
-            availableStatus: 'Available for tomorrow',
-            isRecommended: false,
-            location: {
-              name: `${locName} (${locPincode})`,
-              pincode: locPincode
-            }
-          });
-        }
-      });
-    }
-    return merged;
-  }, [activeTradeId, activeTrade, workers, locName, locPincode, selectedLocState]);
+          prof.includes(activeTrade.name.toLowerCase())
+        );
+      })
+      .map((w, idx) => ({
+        ...w,
+        hourly_rate: w.hourly_rate || Math.round((Number(w.daily_rate) || 550) / 8),
+        distance_km: w.distance_km || (1.2 + idx * 0.5).toFixed(1),
+        availableStatus: w.availableStatus || 'Available for tomorrow',
+        isRecommended: w.isRecommended !== undefined ? w.isRecommended : (Number(w.completed_jobs || 0) > 0),
+        skills: w.skills && w.skills.length > 0 ? w.skills : ['House Wiring', 'MCB Installation', 'Fan Installation']
+      }));
+  }, [activeTradeId, activeTrade, workers]);
 
   // Auto-detect 6-digit PINCODE in search input and switch location dynamically
   useEffect(() => {
@@ -995,7 +433,7 @@ export default function FindWorkersView({
                       </div>
                       <div>
                         <div className="hl-trade-card-name">{cat.name}</div>
-                        <div className="hl-trade-card-sub">{cat.badge}</div>
+                        <div className="hl-trade-card-sub">{(() => {  const count = (workers || []).filter((w) => {    const p = (w.profession || '').toLowerCase();    return p.includes(cat.id) || (cat.id === 'mechanic' && (p.includes('ac') || p.includes('mechanic'))) || p.includes(cat.name.toLowerCase());  }).length;  return count + (count === 1 ? ' Pro' : ' Pros');})()}</div>
                       </div>
                     </div>
 

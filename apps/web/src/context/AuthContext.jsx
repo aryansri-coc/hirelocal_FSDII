@@ -136,6 +136,16 @@ export function AuthProvider({ children }) {
     if (notify) showToast('You have been signed out.', 'info');
   };
 
+  const setDirectAuth = ({ token: newToken, user: newUser, worker: newWorker }) => {
+    if (newToken) localStorage.setItem('hirelocal_token', newToken);
+    if (newUser?.user_id) localStorage.setItem('hirelocal_user_id', newUser.user_id);
+    setToken(newToken);
+    setUser(newUser);
+    setWorker(newWorker || null);
+    showToast(`Voice Login Verified! Welcome back, ${newUser?.name || 'Worker'}!`, 'success');
+    loadNotifications();
+  };
+
   // Demo Persona Switcher - preserved ONLY for DEMO_MODE (Section 2)
   const selectDemoAccount = (demoAcc) => {
     localStorage.setItem('hirelocal_token', demoAcc.token);
@@ -193,6 +203,7 @@ export function AuthProvider({ children }) {
         login,
         signup,
         logout,
+        setDirectAuth,
         refreshUser: loadCurrentUser,
         refreshNotifications: loadNotifications
       }}

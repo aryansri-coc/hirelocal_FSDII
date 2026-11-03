@@ -10,7 +10,7 @@ export class CallSession {
     this.sessionId = sessionId;
     this.workerPhone = phone;
     this.phone = phone;
-    this.mode = mode; // 'registration' | 'job_notification' | 'customer_order'
+    this.mode = mode; // 'registration' | 'job_notification' | 'customer_order' | 'worker_login'
     this.language = 'hi'; // default Hindi
     this.state = mode === 'registration'
       ? CALLBOT_REGISTRATION_STATES.START
@@ -29,12 +29,13 @@ export class CallSession {
     this.decision = null;
   }
 
-  logStep(speaker, message, state) {
+  logStep(speaker, message, state, metadata = {}) {
     this.callLog.push({
       timestamp: new Date().toISOString(),
       speaker, // 'bot' | 'worker' | 'customer'
       message,
-      state
+      state,
+      ...metadata
     });
   }
 }
@@ -156,4 +157,3 @@ export function parseExperience(input) {
   if (String(input).includes('das') || String(input).includes('ten')) return 10;
   return 3;
 }
-

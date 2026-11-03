@@ -5,7 +5,7 @@ import {
   updateWorkerReliabilityOnCompletion,
   updateWorkerReliabilityOnCancellation
 } from '../../../../packages/services/reliabilityCalculator.js';
-import { getAlternativeWorkers } from '../../../../packages/services/matchingEngine.js';
+import { getAlternativeWorkers, matchWorkers } from '../../../../packages/services/matchingEngine.js';
 import { triggerJobOfferCall } from '../services/telephonyService.js';
 
 
@@ -42,12 +42,14 @@ export async function createJob(req, res, next) {
     }
 
     let selectedWorker = null;
-    if (worker_id) {
-      selectedWorker = db.findById('workers', 'worker_id', worker_id);
+    let assignedWorkerId = worker_id;
+
+    if (assignedWorkerId) {
+      selectedWorker = db.findById('workers', 'worker_id', assignedWorkerId);
       if (!selectedWorker) {
         return res.status(404).json({
           success: false,
-          error: { message: `Selected worker with ID '${worker_id}' not found.` }
+          error: { message: `Selected worker with ID '${assignedWorkerId}' not found.` }
         });
       }
       if (selectedWorker.account_status === 'suspended') {
@@ -56,10 +58,23 @@ export async function createJob(req, res, next) {
           error: { message: 'Selected worker is currently unavailable.' }
         });
       }
+    } else {
+      // Auto-match nearest staged worker for the requested service and location
+      const allWorkers = db.find('workers', (w) => w.account_status !== 'suspended' && w.status !== 'offline');
+      const ranked = matchWorkers(allWorkers, {
+        service: service_type,
+        date: required_date,
+        lat: latitude || 23.2332,
+        lng: longitude || 77.4343
+      });
+      if (ranked && ranked.length > 0) {
+        selectedWorker = ranked[0];
+        assignedWorkerId = selectedWorker.worker_id;
+      }
     }
 
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const initialStatus = worker_id
+    const initialStatus = assignedWorkerId
       ? JOB_STATUS.PENDING_WORKER_RESPONSE
       : JOB_STATUS.REQUESTED;
 
@@ -68,7 +83,7 @@ export async function createJob(req, res, next) {
       customer_id: customer.user_id,
       customer_name: customer.name,
       customer_phone: customer.phone,
-      worker_id: worker_id || null,
+      worker_id: assignedWorkerId || null,
       worker_name: selectedWorker ? selectedWorker.name : null,
       service_type,
       address,
@@ -113,12 +128,14 @@ export async function createJob(req, res, next) {
       });
 
       // If worker is non-smartphone, initiate CallBot outbound session immediately
-      if (selectedWorker.communication_type === 'non_smartphone') {
+      if (selectedWorker.communication_type === 'non_smartphone' || selectedWorker.communication_type === 'all') {
         const dispatchResult = await triggerJobOfferCall(newJob, selectedWorker);
         callbotSession = {
           call_id: dispatchResult?.sessionId,
           status: 'queued',
-          worker_phone: selectedWorker.phone
+          worker_phone: selectedWorker.phone,
+          worker_name: selectedWorker.name,
+          worker_id: selectedWorker.worker_id
         };
       }
     }

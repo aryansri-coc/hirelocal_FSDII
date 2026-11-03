@@ -103,7 +103,7 @@ export default function CustomerProfile({ onBecomeWorker }) {
             {showPincodeSelector && (
               <div style={{ marginBottom: '12px' }}>
                 <PincodeAddressSelector
-                  selectedPincode="462011"
+                  selectedPincode="140413"
                   onSelect={(addr) => {
                     const full = addr.fullAddress || `${addr.name}, ${addr.district}, ${addr.state} - ${addr.pincode}`;
                     setAddress(full);

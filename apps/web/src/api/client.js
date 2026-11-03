@@ -105,6 +105,8 @@ export const api = {
     apiRequest('/callbot/session/step', { method: 'POST', body: JSON.stringify(payload) }),
   processCallStep: (payload) =>
     apiRequest('/callbot/session/step', { method: 'POST', body: JSON.stringify(payload) }),
+  getIncomingCall: () =>
+    apiRequest('/callbot/incoming'),
   getCallLogs: () =>
     apiRequest('/callbot/logs'),
 

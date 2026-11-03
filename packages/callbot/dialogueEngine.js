@@ -1,10 +1,12 @@
 /**
- * Multilingual AI CallBot Dialogue Engine
+ * Multilingual AI CallBot Dialogue Engine with RAG (Retrieval-Augmented Generation)
  * Supports Hindi (hi), Indian English (en), Marathi (mr), and Telugu (te).
  * Implements State Machines for:
  * 1. Worker Inbound Voice Registration (Non-Smartphone Craftsman Onboarding)
  * 2. Worker Outbound Job Offer & Decision
  * 3. Customer Inbound Order Status Check & Confirmation
+ * 4. Worker Voice Authentication & Platform Login
+ * 5. Hyperlocal Real-time RAG Knowledge Retrieval across all languages
  */
 
 import {
@@ -19,6 +21,10 @@ import {
   parseLanguage,
   parseExperience
 } from './stateMachine.js';
+import {
+  detectLanguage,
+  retrieveKnowledge
+} from './ragKnowledgeEngine.js';
 
 export const LOCALIZED_SCRIPTS = {
   hi: {
@@ -28,7 +34,7 @@ export const LOCALIZED_SCRIPTS = {
     job_details: (job) =>
       `काम का विवरण: सेवा: ${job.service_type || 'कारीगर सेवा'}। तारीख: ${job.required_date || 'आगामी'}। इलाका: ${job.address || 'स्थानीय क्षेत्र'}। अनुमानित कमाई: ₹${job.estimated_cost || 700}। समस्या: ${job.description || 'मरम्मत कार्य'}।`,
     ask_decision:
-      'काम स्वीकार करने के लिए 1 दबाएं या "हाँ" बोलें। मना करने के लिए 2 दबाएं या "नहीं" बोलें। दोबारा सुनने के लिए 3 दबाएं।',
+      'काम स्वीकार करने के लिए 1 दबाएं या "हाँ" बोलें। मना करने के लिए 2 दबाएं या "नहीं" बोलें। दोबारा सुनने के लिए 3 दबाएं। कोई सवाल पूछने के लिए सीधे बोलें।',
     job_accepted:
       'धन्यवाद! आपने काम स्वीकार कर लिया है। ग्राहक का नाम और फ़ोन नंबर आपको SMS द्वारा भेज दिया गया है। कृपया समय पर संपर्क करें। शुभ दिन!',
     job_rejected:
@@ -58,7 +64,15 @@ export const LOCALIZED_SCRIPTS = {
     customer_order_cancelled:
       'आपकी बुकिंग रद्द कर दी गई है। HireLocal का उपयोग करने के लिए धन्यवाद।',
     customer_no_orders:
-      'आपके नंबर पर कोई सक्रिय बुकिंग नहीं मिली है। नई सेवा बुक करने के लिए कृपया हमारी वेबसाइट पर जाएं या सहायता के लिए 0 दबाएं।'
+      'आपके नंबर पर कोई सक्रिय बुकिंग नहीं मिली है। नई सेवा बुक करने के लिए कृपया हमारी वेबसाइट पर जाएं या सहायता के लिए 0 दबाएं।',
+
+    // Worker Voice Login Scripts
+    worker_login_prompt: (name) =>
+      `नमस्ते ${name || 'कारीगर साथी'} जी! HireLocal वॉइस लॉगिन सेवा। अपने कारीगर डैशबोर्ड पर लॉग इन करने के लिए 1 दबाएं या 'हाँ' बोलें।`,
+    worker_login_success:
+      'सत्यापन सफल! आपकी कारीगर आईडी सत्यापित हो गई है और वेबसाइट पर आपका सत्र सक्रिय कर दिया गया है। धन्यवाद!',
+    worker_login_not_found:
+      'माफ़ कीजिये, आपका फ़ोन नंबर पंजीकृत कारीगरों में नहीं मिला। नए कारीगर के रूप में पंजीकरण करने के लिए 2 दबाएं।'
   },
 
   en: {
@@ -68,7 +82,7 @@ export const LOCALIZED_SCRIPTS = {
     job_details: (job) =>
       `Job Details: Service: ${job.service_type}. Date: ${job.required_date}. Location: ${job.address}. Payout: ₹${job.estimated_cost || 700}. Description: ${job.description}.`,
     ask_decision:
-      'To accept this job, press 1 or say "Accept". To decline, press 2 or say "Decline". To repeat details, press 3.',
+      'To accept this job, press 1 or say "Accept". To decline, press 2 or say "Decline". To repeat details, press 3. You can also ask any questions directly.',
     job_accepted:
       'Thank you! You have accepted the job. Customer contact details have been sent to your phone via SMS. Have a great day!',
     job_rejected:
@@ -98,7 +112,15 @@ export const LOCALIZED_SCRIPTS = {
     customer_order_cancelled:
       'Your booking has been cancelled. Thank you for choosing HireLocal.',
     customer_no_orders:
-      'No active orders found for your phone number. To book a new service, please visit our website or press 0 for support.'
+      'No active orders found for your phone number. To book a new service, please visit our website or press 0 for support.',
+
+    // Worker Voice Login Scripts
+    worker_login_prompt: (name) =>
+      `Hello ${name || 'Craftsman'}! HireLocal voice login service. Press 1 or say "Yes" to authenticate and access your worker dashboard.`,
+    worker_login_success:
+      'Authentication verified! Your craftsman identity has been confirmed and you are now logged into the portal.',
+    worker_login_not_found:
+      'Sorry, this phone number is not registered as a craftsman. To register as a new worker over this call, press 2.'
   },
 
   mr: {
@@ -131,7 +153,13 @@ export const LOCALIZED_SCRIPTS = {
       'पुष्टीसाठी 1 दाबा. रद्द करण्यासाठी 2 दाबा. पुन्हा ऐकण्यासाठी 3 दाबा.',
     customer_order_confirmed: 'धन्यवाद! आपली पुष्टी नोंदवली गेली आहे.',
     customer_order_cancelled: 'आपली बुकिंग रद्द केली आहे.',
-    customer_no_orders: 'आपल्या नंबरवर कोणतीही चालू बुकिंग आढळली नाही.'
+    customer_no_orders: 'आपल्या नंबरवर कोणतीही चालू बुकिंग आढळली नाही.',
+    worker_login_prompt: (name) =>
+      `नमस्कार ${name || 'मित्र'} जी! HireLocal व्हॉइस लॉगिन सेवा. डॅशबोर्डवर लॉगिन करण्यासाठी 1 दाबा किंवा "होय" म्हणा.`,
+    worker_login_success:
+      'प्रमाणीकरण यशस्वी! आपले लॉगिन सक्रिय झाले आहे. धन्यवाद!',
+    worker_login_not_found:
+      'क्षमस्व, हा नंबर नोंदणीकृत नाही. नवीन नोंदणीसाठी 2 दाबा.'
   },
 
   te: {
@@ -164,14 +192,28 @@ export const LOCALIZED_SCRIPTS = {
       'నిర్ధారించడానికి 1 నొక్కండి. రద్దు చేయడానికి 2 నొక్కండి.',
     customer_order_confirmed: 'ధన్యవాదాలు! మీ నిర్ధారణ పూర్తయింది.',
     customer_order_cancelled: 'మీ ఆర్డర్ రద్దు చేయబడింది.',
-    customer_no_orders: 'మీ నంబర్ పై ఎటువంటి ఆర్డర్లు లేవు.'
+    customer_no_orders: 'మీ నంబర్ పై ఎటువంటి ఆర్డర్లు లేవు.',
+    worker_login_prompt: (name) =>
+      `నమస్కారం ${name || 'కార్మికుడు'} గారు! HireLocal వాయిస్ లాగిన్. లాగిన్ చేయడానికి 1 నొక్కండి.`,
+    worker_login_success:
+      'లాగిన్ విజయవంతమైంది! మీ ఖాతా ధృవీకరించబడింది.',
+    worker_login_not_found:
+      'క్షమించండి, మీ నంబర్ నమోదు కాలేదు. కొత్త రిజిస్ట్రేషన్ కోసం 2 నొక్కండి.'
   }
 };
 
 /**
- * 1. Process Outbound Job Offer Call to Worker
+ * 1. Process Outbound Job Offer Call to Worker (with RAG & Auto-Language Detection)
  */
 export function processJobCallStep(session, input) {
+  // 1. Auto-detect language if caller spoke words
+  if (input && typeof input === 'string' && input.length > 2 && !/^\d+$/.test(input.trim())) {
+    const autoLang = detectLanguage(input);
+    if (autoLang && autoLang !== session.language) {
+      session.language = autoLang;
+    }
+  }
+
   const lang = session.language || 'hi';
   const script = LOCALIZED_SCRIPTS[lang] || LOCALIZED_SCRIPTS.hi;
   const parsed = parseIntent(input);
@@ -188,6 +230,7 @@ export function processJobCallStep(session, input) {
         speechText: responseText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -206,6 +249,7 @@ export function processJobCallStep(session, input) {
           action: 'EXECUTE_DECISION',
           decision: 'ACCEPTED',
           jobId: session.job?.job_id,
+          language: lang,
           isComplete: true
         };
       }
@@ -222,6 +266,7 @@ export function processJobCallStep(session, input) {
           action: 'EXECUTE_DECISION',
           decision: 'REJECTED',
           jobId: session.job?.job_id,
+          language: lang,
           isComplete: true
         };
       }
@@ -233,8 +278,37 @@ export function processJobCallStep(session, input) {
           speechText: responseText,
           nextState: session.state,
           action: 'LISTEN',
+          language: lang,
           isComplete: false
         };
+      }
+
+      // Check RAG Knowledge Retrieval if caller asked any question
+      if (input && typeof input === 'string' && input.length >= 3) {
+        const ragMatch = retrieveKnowledge(input, lang);
+        if (ragMatch) {
+          const followUp = lang === 'hi'
+            ? 'काम स्वीकार करने के लिए 1 दबाएं या मना करने के लिए 2 दबाएं।'
+            : lang === 'mr'
+              ? 'स्वीकारण्यासाठी 1 दाबा किंवा नाकारण्यासाठी 2 दाबा.'
+              : lang === 'te'
+                ? 'అంగీకరించడానికి 1 నొక్కండి, తిరస్కరించడానికి 2 నొక్కండి.'
+                : 'Press 1 to Accept, or Press 2 to Decline.';
+          const responseText = `${ragMatch.answer} ${followUp}`;
+          session.logStep('bot', responseText, session.state, {
+            ragTopic: ragMatch.topic,
+            detectedLanguage: ragMatch.detectedLanguage
+          });
+          return {
+            speechText: responseText,
+            nextState: session.state,
+            action: 'LISTEN',
+            language: lang,
+            ragTopic: ragMatch.topic,
+            detectedLanguage: ragMatch.detectedLanguage,
+            isComplete: false
+          };
+        }
       }
 
       // Retry handling
@@ -251,6 +325,7 @@ export function processJobCallStep(session, input) {
           nextState: CALLBOT_JOB_STATES.END_CALL,
           action: 'HANGUP',
           decision: 'NO_RESPONSE',
+          language: lang,
           isComplete: true
         };
       }
@@ -261,6 +336,7 @@ export function processJobCallStep(session, input) {
         speechText: retryPrompt,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -270,6 +346,7 @@ export function processJobCallStep(session, input) {
         speechText: 'Thank you. Goodbye.',
         nextState: CALLBOT_JOB_STATES.END_CALL,
         action: 'HANGUP',
+        language: lang,
         isComplete: true
       };
     }
@@ -278,9 +355,15 @@ export function processJobCallStep(session, input) {
 
 /**
  * 2. Process Inbound Worker Voice Registration
- * Allows 2G / non-smartphone workers to register directly over phone call!
  */
 export function processRegistrationCallStep(session, input) {
+  if (input && typeof input === 'string' && input.length > 2 && !/^\d+$/.test(input.trim())) {
+    const autoLang = detectLanguage(input);
+    if (autoLang && autoLang !== session.language) {
+      session.language = autoLang;
+    }
+  }
+
   let lang = session.language || 'hi';
   let script = LOCALIZED_SCRIPTS[lang] || LOCALIZED_SCRIPTS.hi;
 
@@ -295,6 +378,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -312,6 +396,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -327,6 +412,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -342,6 +428,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -357,6 +444,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -372,6 +460,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -389,12 +478,12 @@ export function processRegistrationCallStep(session, input) {
           nextState: CALLBOT_REGISTRATION_STATES.REGISTRATION_COMPLETE,
           action: 'EXECUTE_REGISTRATION',
           registrationData: session.registrationData,
+          language: lang,
           isComplete: true
         };
       }
 
       if (parsed.intent === CALLBOT_INTENTS.REJECT) {
-        // Restart registration on rejection
         session.state = CALLBOT_REGISTRATION_STATES.GET_NAME;
         const speechText = `${script.invalid_input} ${script.ask_name}`;
         session.logStep('bot', speechText, session.state);
@@ -402,6 +491,7 @@ export function processRegistrationCallStep(session, input) {
           speechText,
           nextState: session.state,
           action: 'LISTEN',
+          language: lang,
           isComplete: false
         };
       }
@@ -413,6 +503,7 @@ export function processRegistrationCallStep(session, input) {
         speechText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -422,6 +513,7 @@ export function processRegistrationCallStep(session, input) {
         speechText: 'Registration ended. Goodbye.',
         nextState: CALLBOT_REGISTRATION_STATES.REGISTRATION_COMPLETE,
         action: 'HANGUP',
+        language: lang,
         isComplete: true
       };
     }
@@ -429,10 +521,16 @@ export function processRegistrationCallStep(session, input) {
 }
 
 /**
- * 3. Process Inbound Customer Call (Order Check & Confirmation)
- * Allows customers to call and check their active order or confirm their availability.
+ * 3. Process Inbound Customer Call (Order Check & Confirmation with RAG)
  */
 export function processCustomerCallStep(session, input) {
+  if (input && typeof input === 'string' && input.length > 2 && !/^\d+$/.test(input.trim())) {
+    const autoLang = detectLanguage(input);
+    if (autoLang && autoLang !== session.language) {
+      session.language = autoLang;
+    }
+  }
+
   const lang = session.language || 'hi';
   const script = LOCALIZED_SCRIPTS[lang] || LOCALIZED_SCRIPTS.hi;
   const parsed = parseIntent(input);
@@ -449,24 +547,26 @@ export function processCustomerCallStep(session, input) {
           speechText: noOrderText,
           nextState: CALLBOT_CUSTOMER_STATES.END_CALL,
           action: 'HANGUP',
+          language: lang,
           isComplete: true
         };
       }
 
-      session.state = CALLBOT_CUSTOMER_STATES.CONFIRM_ORDER;
-      const responseText = `${script.customer_welcome(session.customer?.name)} ${script.customer_order_status(session.job)} ${script.customer_ask_action}`;
-      session.logStep('bot', responseText, session.state);
+      session.state = CALLBOT_CUSTOMER_STATES.ORDER_STATUS;
+      const welcomeStatusText = `${script.customer_welcome(session.customer?.name)} ${script.customer_order_status(session.job)} ${script.customer_ask_action}`;
+      session.logStep('bot', welcomeStatusText, session.state);
       return {
-        speechText: responseText,
-        nextState: CALLBOT_CUSTOMER_STATES.CONFIRM_ORDER,
+        speechText: welcomeStatusText,
+        nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
 
     case CALLBOT_CUSTOMER_STATES.ORDER_STATUS:
-    case CALLBOT_CUSTOMER_STATES.CONFIRM_ORDER: {
-      if (parsed.intent === CALLBOT_INTENTS.ACCEPT) {
+    case CALLBOT_CUSTOMER_STATES.VERIFY_CONFIRMATION: {
+      if (parsed.intent === CALLBOT_INTENTS.ACCEPT || parsed.intent === CALLBOT_INTENTS.CONFIRM) {
         session.state = CALLBOT_CUSTOMER_STATES.END_CALL;
         session.status = 'completed';
         const responseText = script.customer_order_confirmed;
@@ -476,6 +576,7 @@ export function processCustomerCallStep(session, input) {
           nextState: CALLBOT_CUSTOMER_STATES.END_CALL,
           action: 'EXECUTE_CUSTOMER_CONFIRMATION',
           jobId: session.job?.job_id,
+          language: lang,
           isComplete: true
         };
       }
@@ -490,6 +591,7 @@ export function processCustomerCallStep(session, input) {
           nextState: CALLBOT_CUSTOMER_STATES.END_CALL,
           action: 'EXECUTE_CUSTOMER_CANCELLATION',
           jobId: session.job?.job_id,
+          language: lang,
           isComplete: true
         };
       }
@@ -501,8 +603,31 @@ export function processCustomerCallStep(session, input) {
           speechText: responseText,
           nextState: session.state,
           action: 'LISTEN',
+          language: lang,
           isComplete: false
         };
+      }
+
+      // Check RAG for customer query (e.g. cancellation policy, safety, pricing)
+      if (input && typeof input === 'string' && input.length >= 3) {
+        const ragMatch = retrieveKnowledge(input, lang);
+        if (ragMatch) {
+          const followUp = script.customer_ask_action;
+          const responseText = `${ragMatch.answer} ${followUp}`;
+          session.logStep('bot', responseText, session.state, {
+            ragTopic: ragMatch.topic,
+            detectedLanguage: ragMatch.detectedLanguage
+          });
+          return {
+            speechText: responseText,
+            nextState: session.state,
+            action: 'LISTEN',
+            language: lang,
+            ragTopic: ragMatch.topic,
+            detectedLanguage: ragMatch.detectedLanguage,
+            isComplete: false
+          };
+        }
       }
 
       if (parsed.intent === CALLBOT_INTENTS.HELP) {
@@ -514,6 +639,7 @@ export function processCustomerCallStep(session, input) {
           speechText: responseText,
           nextState: CALLBOT_CUSTOMER_STATES.END_CALL,
           action: 'CONNECT_SUPPORT',
+          language: lang,
           isComplete: true
         };
       }
@@ -525,6 +651,7 @@ export function processCustomerCallStep(session, input) {
         speechText: retryText,
         nextState: session.state,
         action: 'LISTEN',
+        language: lang,
         isComplete: false
       };
     }
@@ -534,8 +661,118 @@ export function processCustomerCallStep(session, input) {
         speechText: 'Thank you for calling HireLocal.',
         nextState: CALLBOT_CUSTOMER_STATES.END_CALL,
         action: 'HANGUP',
+        language: lang,
         isComplete: true
       };
     }
   }
+}
+
+/**
+ * 4. Process Worker Voice Authentication & Platform Login
+ * Allows non-smartphone craftsmen to verify identity and activate dashboard session over phone call!
+ */
+export function processWorkerLoginCallStep(session, input) {
+  if (input && typeof input === 'string' && input.length > 2 && !/^\d+$/.test(input.trim())) {
+    const autoLang = detectLanguage(input);
+    if (autoLang && autoLang !== session.language) {
+      session.language = autoLang;
+    }
+  }
+
+  const lang = session.language || 'hi';
+  const script = LOCALIZED_SCRIPTS[lang] || LOCALIZED_SCRIPTS.hi;
+  const parsed = parseIntent(input);
+
+  session.logStep('worker', input || '[Call Connected]', session.state);
+
+  if (!session.state || session.state === 'START' || session.state === 'START_CALL') {
+    session.state = 'AWAITING_LOGIN_CONFIRM';
+    const speechText = script.worker_login_prompt
+      ? script.worker_login_prompt(session.workerName)
+      : `नमस्ते ${session.workerName || 'साथी'} जी! HireLocal वॉइस लॉगिन सेवा। अपने कारीगर डैशबोर्ड पर लॉग इन करने के लिए 1 दबाएं या 'हाँ' बोलें।`;
+    session.logStep('bot', speechText, session.state);
+    return {
+      speechText,
+      nextState: session.state,
+      action: 'LISTEN',
+      language: lang,
+      isComplete: false
+    };
+  }
+
+  if (session.state === 'AWAITING_LOGIN_CONFIRM') {
+    if (parsed.intent === CALLBOT_INTENTS.ACCEPT || input === '1' || input === 'dtmf_1') {
+      session.state = 'LOGIN_COMPLETED';
+      session.status = 'completed';
+      const speechText = script.worker_login_success;
+      session.logStep('bot', speechText, session.state);
+      return {
+        speechText,
+        nextState: 'LOGIN_COMPLETED',
+        action: 'EXECUTE_LOGIN',
+        workerPhone: session.phone || session.workerPhone,
+        workerName: session.workerName,
+        language: lang,
+        isComplete: true
+      };
+    }
+
+    if (parsed.intent === CALLBOT_INTENTS.REJECT) {
+      session.state = 'LOGIN_CANCELLED';
+      const speechText = lang === 'hi' ? 'लॉगिन रद्द कर दिया गया है। धन्यवाद!' : 'Login cancelled. Thank you!';
+      session.logStep('bot', speechText, session.state);
+      return {
+        speechText,
+        nextState: 'LOGIN_CANCELLED',
+        action: 'HANGUP',
+        language: lang,
+        isComplete: true
+      };
+    }
+
+    // RAG Support during login call
+    if (input && typeof input === 'string' && input.length >= 3) {
+      const ragMatch = retrieveKnowledge(input, lang);
+      if (ragMatch) {
+        const followUp = lang === 'hi'
+          ? 'डैशबोर्ड पर लॉग इन करने के लिए 1 दबाएं।'
+          : 'Press 1 to log into your dashboard.';
+        const speechText = `${ragMatch.answer} ${followUp}`;
+        session.logStep('bot', speechText, session.state, {
+          ragTopic: ragMatch.topic,
+          detectedLanguage: ragMatch.detectedLanguage
+        });
+        return {
+          speechText,
+          nextState: session.state,
+          action: 'LISTEN',
+          language: lang,
+          ragTopic: ragMatch.topic,
+          detectedLanguage: ragMatch.detectedLanguage,
+          isComplete: false
+        };
+      }
+    }
+
+    const retryText = lang === 'hi'
+      ? 'लॉग इन करने के लिए कृपया 1 दबाएं या "हाँ" बोलें।'
+      : 'Please press 1 or say "Yes" to log into your dashboard.';
+    session.logStep('bot', retryText, session.state);
+    return {
+      speechText: retryText,
+      nextState: session.state,
+      action: 'LISTEN',
+      language: lang,
+      isComplete: false
+    };
+  }
+
+  return {
+    speechText: 'Thank you. Goodbye.',
+    nextState: 'END_CALL',
+    action: 'HANGUP',
+    language: lang,
+    isComplete: true
+  };
 }

@@ -25,14 +25,15 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export default function JobBookingModal({ worker, defaultService, onClose, onJobCreated, selectedLocation }) {
+export default function JobBookingModal({ worker, defaultService, onClose, onJobCreated, onOpenCallbotForJob, selectedLocation }) {
   const { user, showToast } = useAuth();
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const isCallbot = worker?.communication_type === 'non_smartphone';
+  const isCallbot = worker?.communication_type === 'non_smartphone' || !worker?.communication_type;
   const firstName = worker?.name ? worker.name.split(' ')[0] : 'Worker';
+  const isNewWorker = Number(worker?.completed_jobs || 0) === 0 || String(worker?.worker_id || '').includes('vapi');
   const dailyRate = Number(worker?.daily_rate) || 500;
 
   // Dynamic services based on worker profession
@@ -66,11 +67,12 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
   const [requiredDate, setRequiredDate] = useState(tomorrowStr);
   const [duration, setDuration] = useState('1 Day');
   const [address, setAddress] = useState(
-    user?.address || (selectedLocation?.pincode ? `MP Nagar Zone 2, Bhopal - ${selectedLocation.pincode}` : 'Flat 402, Shalimar Heights, MP Nagar Zone 2, Bhopal (462011)')
+    user?.address || (selectedLocation?.pincode ? `${selectedLocation.locality || 'Bajheri'}, ${selectedLocation.district || 'Mohali'} - ${selectedLocation.pincode}` : 'Bajheri, Mohali, Punjab (140413)')
   );
   const [pincodeLookupOpen, setPincodeLookupOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [createdJob, setCreatedJob] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Reviews state
@@ -175,6 +177,11 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
 
   // Fetch reviews for worker
   useEffect(() => {
+    if (isNewWorker) {
+      setReviews([]);
+      setLoadingReviews(false);
+      return;
+    }
     if (worker?.worker_id) {
       setLoadingReviews(true);
       api.getWorkerRatings(worker.worker_id)
@@ -182,18 +189,18 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
           if (res.success && Array.isArray(res.data) && res.data.length > 0) {
             setReviews(res.data);
           } else {
-            setReviews(getDefaultReviews());
+            setReviews([]);
           }
         })
         .catch(() => {
-          setReviews(getDefaultReviews());
+          setReviews([]);
         })
         .finally(() => setLoadingReviews(false));
     } else {
-      setReviews(getDefaultReviews());
+      setReviews([]);
       setLoadingReviews(false);
     }
-  }, [worker]);
+  }, [worker, isNewWorker]);
 
   // Handle post review
   const handleSubmitReview = async (e) => {
@@ -269,6 +276,7 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
 
       const res = await api.createJob(payload);
       if (res.success) {
+        setCreatedJob(res.data?.job || null);
         setConfirmed(true);
         if (showToast) {
           showToast(
@@ -320,7 +328,7 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                 </span>
               </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                {worker?.profession || 'Skilled Pro'} · {worker?.experience || 5} yrs experience · {worker?.location?.name || worker?.location_name || 'MP Nagar, Bhopal'}
+                {worker?.profession || 'Skilled Pro'} · {worker?.experience || 5} yrs experience · {worker?.location?.name || worker?.location_name || 'Bajheri, Mohali (140413)'}
               </p>
             </div>
           </div>
@@ -416,6 +424,35 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
               </div>
             </div>
 
+            {isCallbot && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  if (onOpenCallbotForJob) {
+                    onOpenCallbotForJob(createdJob || { job_id: 'latest', worker_name: worker?.name, worker_id: worker?.worker_id });
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '13px 20px',
+                  fontWeight: 800,
+                  borderRadius: '12px',
+                  marginBottom: '12px',
+                  backgroundColor: '#EFF6FF',
+                  color: '#1D4ED8',
+                  border: '1.5px solid #BFDBFE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                <PhoneCall size={17} />
+                <span>Simulate Worker Receiving Call ({worker?.name || firstName})</span>
+              </button>
+            )}
+
             <button
               type="button"
               className="btn btn-primary"
@@ -486,21 +523,40 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                     {worker?.profession || 'Plumber'} · {worker?.experience || 5} yrs exp
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#B45309'
-                    }}>
-                      <Star size={12} fill="#F59E0B" color="#F59E0B" />
-                      {worker?.rating ? Number(worker.rating).toFixed(1) : '4.9'}
-                    </span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>•</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {worker?.completed_jobs || 142} jobs completed
-                    </span>
+                    {isNewWorker ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#047857',
+                        backgroundColor: '#ECFDF5',
+                        padding: '2px 8px',
+                        borderRadius: '6px'
+                      }}>
+                        <Sparkles size={11} color="#059669" />
+                        <span>✨ New Artisan • 0 jobs completed</span>
+                      </span>
+                    ) : (
+                      <>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#B45309'
+                        }}>
+                          <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                          {worker?.rating ? Number(worker.rating).toFixed(1) : '5.0'}
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>•</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {worker?.completed_jobs} jobs completed
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -620,7 +676,7 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                 {pincodeLookupOpen && (
                   <div style={{ marginBottom: '12px' }}>
                     <PincodeAddressSelector
-                      selectedPincode={selectedLocation?.pincode || '462011'}
+                      selectedPincode={selectedLocation?.pincode || '140413'}
                       onSelect={(addr) => {
                         const baseAddr = addr.fullAddress || `${addr.name}, ${addr.district}, ${addr.state} - ${addr.pincode}`;
                         setAddress(baseAddr);
@@ -749,98 +805,145 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                 ------------------------------------------------ */}
             <div className="hl-booking-reviews-col">
               {/* Reviews Header & Score */}
-              <div style={{
-                padding: '16px',
-                backgroundColor: '#FFFFFF',
-                borderRadius: '16px',
-                border: '1px solid var(--border)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isNewWorker ? (
+                <div style={{
+                  padding: '16px 18px',
+                  backgroundColor: '#F0FDF4',
+                  borderRadius: '16px',
+                  border: '1px solid #BBF7D0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#FEF3C7',
-                      color: '#D97706',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      backgroundColor: '#DCFCE7',
+                      color: '#059669',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      flexShrink: 0
                     }}>
-                      <Star size={18} fill="#D97706" />
+                      <Sparkles size={20} color="#059669" />
                     </div>
                     <div>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>
-                        Customer Reviews & Reputation
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#065F46' }}>
+                        New Verified Artisan
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        Feedback from verified neighborhood hires
+                      <div style={{ fontSize: '12px', color: '#047857' }}>
+                        Recently joined HireLocal · Special rate ₹{dailyRate}/day
                       </div>
                     </div>
                   </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)' }}>
-                      {worker?.rating ? Number(worker.rating).toFixed(1) : '4.9'} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>/ 5.0</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={12} fill="#F59E0B" color="#F59E0B" />
-                      ))}
-                    </div>
+                  <div style={{
+                    backgroundColor: '#059669',
+                    color: '#FFFFFF',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '8px'
+                  }}>
+                    Try Now
                   </div>
                 </div>
-
-                {/* Reputation Badges Strip */}
+              ) : (
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px',
-                  paddingTop: '10px',
-                  borderTop: '1px solid var(--border)'
+                  padding: '16px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border)'
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <ShieldCheck size={15} color="#16A34A" />
-                    <span>Police & KYC Verified</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: '#FEF3C7',
+                        color: '#D97706',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Star size={18} fill="#D97706" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)' }}>
+                          Customer Reviews & Reputation
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          Feedback from verified neighborhood hires
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)' }}>
+                        {worker?.rating ? Number(worker.rating).toFixed(1) : '5.0'} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>/ 5.0</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={12} fill="#F59E0B" color="#F59E0B" />
+                        ))}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Reputation Badges Strip */}
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)'
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px',
+                    paddingTop: '10px',
+                    borderTop: '1px solid var(--border)'
                   }}>
-                    <Clock size={15} color="#2563EB" />
-                    <span>98% Punctual Arrival</span>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <Wrench size={15} color="#EA580C" />
-                    <span>Carries Full Toolset</span>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <Award size={15} color="#7C3AED" />
-                    <span>Direct Cash/UPI to Pro</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <ShieldCheck size={15} color="#16A34A" />
+                      <span>Police & KYC Verified</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <Clock size={15} color="#2563EB" />
+                      <span>98% Punctual Arrival</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <Wrench size={15} color="#EA580C" />
+                      <span>Carries Full Toolset</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <Award size={15} color="#7C3AED" />
+                      <span>Direct Cash/UPI to Pro</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* "Write Down a Review" Interactive Section */}
               <div className="hl-write-review-box">
@@ -973,15 +1076,34 @@ export default function JobBookingModal({ worker, defaultService, onClose, onJob
                   </div>
                 ) : reviews.length === 0 ? (
                   <div style={{
-                    padding: '24px',
+                    padding: '30px 20px',
                     textAlign: 'center',
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: '14px',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-muted)',
-                    fontSize: '13px'
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '16px',
+                    border: '1px dashed #CBD5E1',
+                    color: 'var(--text-secondary)'
                   }}>
-                    No reviews yet. Be the first customer to review {firstName}!
+                    <div style={{ fontSize: '26px', marginBottom: '8px' }}>🌱</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-main)', marginBottom: '4px' }}>
+                      No Reviews Yet
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '0 auto 12px', maxWidth: '300px', lineHeight: 1.4 }}>
+                      {firstName} is a newly registered {worker?.profession || 'artisan'}. Be the first customer in your neighborhood to hire {firstName} and share your experience!
+                    </p>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      color: '#047857',
+                      backgroundColor: '#ECFDF5',
+                      padding: '4px 10px',
+                      borderRadius: '6px'
+                    }}>
+                      <ShieldCheck size={13} color="#059669" />
+                      <span>Verified Phone & KYC • ₹0 Platform Fee</span>
+                    </div>
                   </div>
                 ) : (
                   reviews.map((rev) => (

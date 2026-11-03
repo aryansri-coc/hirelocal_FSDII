@@ -29,17 +29,17 @@ const LOCAL_GEO_MAP = {
 };
 
 export default function PincodeGeographicMapCard({
-  pincode = '462011',
+  pincode = '140413',
   locationLabel = '',
   onSelectLocality,
   onExplorePros,
   activeTradeName = 'Pros'
 }) {
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'photo'
-  const cleanPin = (pincode || '462011').toString().trim().slice(0, 6);
+  const cleanPin = (pincode || '140413').toString().trim().slice(0, 6);
 
   const [geoData, setGeoData] = useState(() => {
-    const defaultCoords = LOCAL_GEO_MAP[cleanPin] || LOCAL_GEO_MAP['462011'];
+    const defaultCoords = LOCAL_GEO_MAP[cleanPin] || LOCAL_GEO_MAP['140413'];
     return {
       lat: defaultCoords.lat,
       lng: defaultCoords.lng,
@@ -71,7 +71,7 @@ export default function PincodeGeographicMapCard({
           count: res.count || (res.localities?.length || 0)
         });
       } else {
-        const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['462011'];
+        const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['140413'];
         setGeoData((prev) => ({
           ...prev,
           lat: fallback.lat,
@@ -83,7 +83,7 @@ export default function PincodeGeographicMapCard({
       }
     } catch (err) {
       console.warn('Failed to load geo details for', pin, err);
-      const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['462011'];
+      const fallback = LOCAL_GEO_MAP[pin] || LOCAL_GEO_MAP['140413'];
       setGeoData((prev) => ({
         ...prev,
         lat: fallback.lat,

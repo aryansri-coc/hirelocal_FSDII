@@ -29,6 +29,25 @@ class DatabaseStore {
       notifications: [],
       audit_logs: []
     };
+
+    // Immediately load from disk storage synchronously so data is available instantly
+    if (fs.existsSync(DB_FILE)) {
+      try {
+        const raw = fs.readFileSync(DB_FILE, 'utf-8');
+        const parsed = JSON.parse(raw);
+        this.data = {
+          users: parsed.users || [],
+          service_categories: parsed.service_categories || [],
+          workers: parsed.workers || [],
+          jobs: parsed.jobs || [],
+          ratings: parsed.ratings || [],
+          call_logs: parsed.call_logs || [],
+          notifications: parsed.notifications || [],
+          audit_logs: parsed.audit_logs || []
+        };
+      } catch (err) {}
+    }
+
     this.init();
   }
 
@@ -178,48 +197,83 @@ class DatabaseStore {
   async syncInsertToPostgres(collectionName, record) {
     try {
       if (collectionName === 'users') {
-        await pool.query(
-          `INSERT INTO users (user_id, name, phone, email, address, role, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, address = EXCLUDED.address`,
-          [record.user_id, record.name, record.phone, record.email || null, record.address || '', record.role, record.status || 'active']
+        const checkExisting = await pool.query(
+          `SELECT user_id FROM users WHERE phone = $1 OR user_id = $2`,
+          [record.phone, record.user_id]
         );
+        if (checkExisting.rows.length > 0) {
+          const targetId = checkExisting.rows[0].user_id;
+          await pool.query(
+            `UPDATE users SET name = $1, email = $2, address = $3, status = $4, role = $5, updated_at = CURRENT_TIMESTAMP WHERE user_id = $6`,
+            [record.name, record.email || null, record.address || '', record.status || 'active', record.role, targetId]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO users (user_id, name, phone, email, address, role, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, address = EXCLUDED.address`,
+            [record.user_id, record.name, record.phone, record.email || null, record.address || '', record.role, record.status || 'active']
+          );
+        }
       } else if (collectionName === 'workers') {
-        await pool.query(
-          `INSERT INTO workers (
-            worker_id, user_id, profession, skills, experience, language, languages,
-            location_name, latitude, longitude, service_radius, communication_type,
-            rating, reliability, completed_jobs, total_accepted_jobs, daily_rate,
-            status, verification_status, account_status, working_days, bio
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
-          ON CONFLICT (worker_id) DO UPDATE SET
-            profession = EXCLUDED.profession, skills = EXCLUDED.skills, experience = EXCLUDED.experience,
-            daily_rate = EXCLUDED.daily_rate, status = EXCLUDED.status, service_radius = EXCLUDED.service_radius`,
-          [
-            record.worker_id,
-            record.user_id,
-            record.profession,
-            JSON.stringify(record.skills || []),
-            record.experience || 0,
-            record.language || 'hi',
-            JSON.stringify(record.languages || ['hi']),
-            record.location?.name || record.location_name || 'Bhopal, MP',
-            record.location?.lat || record.latitude || 23.2332,
-            record.location?.lng || record.longitude || 77.4343,
-            record.service_radius || 15.0,
-            record.communication_type || 'smartphone',
-            record.rating || 5.0,
-            record.reliability,
-            record.completed_jobs || 0,
-            record.total_accepted_jobs || 0,
-            record.daily_rate || 500,
-            record.status || 'available',
-            record.verification_status || 'verified',
-            record.account_status || 'active',
-            JSON.stringify(record.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']),
-            record.bio || ''
-          ]
+        const checkExistingWorker = await pool.query(
+          `SELECT worker_id FROM workers WHERE user_id = $1 OR worker_id = $2`,
+          [record.user_id, record.worker_id]
         );
+        if (checkExistingWorker.rows.length > 0) {
+          const targetWorkerId = checkExistingWorker.rows[0].worker_id;
+          await pool.query(
+            `UPDATE workers SET
+              profession = $1, skills = $2, experience = $3, daily_rate = $4,
+              status = $5, service_radius = $6, updated_at = CURRENT_TIMESTAMP
+             WHERE worker_id = $7`,
+            [
+              record.profession,
+              JSON.stringify(record.skills || []),
+              record.experience || 0,
+              record.daily_rate || 500,
+              record.status || 'available',
+              record.service_radius || 15.0,
+              targetWorkerId
+            ]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO workers (
+              worker_id, user_id, profession, skills, experience, language, languages,
+              location_name, latitude, longitude, service_radius, communication_type,
+              rating, reliability, completed_jobs, total_accepted_jobs, daily_rate,
+              status, verification_status, account_status, working_days, bio
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+            ON CONFLICT (worker_id) DO UPDATE SET
+              profession = EXCLUDED.profession, skills = EXCLUDED.skills, experience = EXCLUDED.experience,
+              daily_rate = EXCLUDED.daily_rate, status = EXCLUDED.status, service_radius = EXCLUDED.service_radius`,
+            [
+              record.worker_id,
+              record.user_id,
+              record.profession,
+              JSON.stringify(record.skills || []),
+              record.experience || 0,
+              record.language || 'hi',
+              JSON.stringify(record.languages || ['hi']),
+              record.location?.name || record.location_name || 'Bhopal, MP',
+              record.location?.lat || record.latitude || 23.2332,
+              record.location?.lng || record.longitude || 77.4343,
+              record.service_radius || 15.0,
+              record.communication_type || 'smartphone',
+              record.rating || 5.0,
+              record.reliability,
+              record.completed_jobs || 0,
+              record.total_accepted_jobs || 0,
+              record.daily_rate || 500,
+              record.status || 'available',
+              record.verification_status || 'verified',
+              record.account_status || 'active',
+              JSON.stringify(record.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']),
+              record.bio || ''
+            ]
+          );
+        }
       } else if (collectionName === 'jobs') {
         await pool.query(
           `INSERT INTO jobs (

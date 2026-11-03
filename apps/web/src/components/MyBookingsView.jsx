@@ -23,94 +23,13 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-// Demo initial bookings matching the user screenshot perfectly
-const INITIAL_DEMO_BOOKINGS = [
-  {
-    job_id: 'bk_1',
-    worker_id: 'wrk_elec_1',
-    worker_name: 'Mukesh Sharma',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service_type: 'House Wiring',
-    status: 'CONFIRMED',
-    displayStatus: 'Confirmed',
-    statusColor: 'confirmed',
-    dateLabel: 'Tomorrow, Sep 29',
-    required_date: '2026-09-29',
-    preferred_time: 'morning_9_12',
-    address: 'Plot 42, Near Hanuman Temple, Govindpura, Bihar',
-    estimated_cost: 550,
-    phone: '+91 98765 43210',
-    communication_type: 'non_smartphone',
-    description: 'Main distribution board wiring and switchboard replacement'
-  },
-  {
-    job_id: 'bk_2',
-    worker_id: 'wrk_elec_2',
-    worker_name: 'Sunil Verma',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service_type: 'Fan Installation',
-    status: 'PENDING',
-    displayStatus: 'Pending',
-    statusColor: 'pending',
-    dateLabel: 'Wed, Sep 30',
-    required_date: '2026-09-30',
-    preferred_time: 'afternoon_12_4',
-    address: 'Flat 304, Green Heights, Govindpura, Bihar',
-    estimated_cost: 450,
-    phone: '+91 98765 43211',
-    communication_type: 'smartphone',
-    description: 'Install 2 ceiling fans and speed regulator switch'
-  },
-  {
-    job_id: 'bk_3',
-    worker_id: 'wrk_elec_5',
-    worker_name: 'Rakesh Singh',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service_type: 'MCB Installation',
-    status: 'CONFIRMED',
-    displayStatus: 'Confirmed',
-    statusColor: 'confirmed',
-    dateLabel: 'Fri, Oct 3',
-    required_date: '2026-10-03',
-    preferred_time: 'morning_9_12',
-    address: 'House 12, Sector 4, Govindpura, Bihar',
-    estimated_cost: 480,
-    phone: '+91 98765 43214',
-    communication_type: 'non_smartphone',
-    description: 'Single phase MCB tripping issue and circuit breaker inspection'
-  },
-  {
-    job_id: 'bk_4',
-    worker_id: 'wrk_elec_6',
-    worker_name: 'Vijay Prasad',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=160&auto=format&fit=crop&q=80',
-    profession: 'Electrician',
-    service_type: 'Lighting',
-    status: 'COMPLETED',
-    displayStatus: 'Completed',
-    statusColor: 'completed',
-    dateLabel: 'Completed on Sep 28',
-    required_date: '2026-09-28',
-    preferred_time: 'evening_4_7',
-    address: 'Shop 8, Main Market, Govindpura, Bihar',
-    estimated_cost: 650,
-    phone: '+91 98765 43215',
-    communication_type: 'smartphone',
-    description: 'LED panel lights installation and concealed conduit wiring',
-    has_rated: false
-  }
-];
-
 export default function MyBookingsView({
   onFindWorker,
   onOpenCallbotForJob
 }) {
   const { user, showToast } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'completed' | 'cancelled'
-  const [bookings, setBookings] = useState(INITIAL_DEMO_BOOKINGS);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Modals state
@@ -165,10 +84,9 @@ export default function MyBookingsView({
           };
         });
 
-        // Merge: keep mock items that aren't already represented
-        const existingIds = new Set(backendJobs.map((b) => b.job_id));
-        const keptDemos = INITIAL_DEMO_BOOKINGS.filter((d) => !existingIds.has(d.job_id));
-        setBookings([...backendJobs, ...keptDemos]);
+        setBookings(backendJobs);
+      } else {
+        setBookings([]);
       }
     } catch (err) {
       console.warn('Could not fetch backend jobs, falling back to demo bookings:', err);

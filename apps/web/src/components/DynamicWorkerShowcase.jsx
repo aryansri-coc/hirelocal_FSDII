@@ -7,14 +7,14 @@ export default function DynamicWorkerShowcase({
   onBookWorker,
   onFindWorker,
   onOpenCallbot,
-  selectedPincode = '462011'
+  selectedPincode = '140413'
 }) {
   return (
     <div style={{ padding: '24px 0 48px', backgroundColor: 'var(--bg-main)' }}>
       <FindWorkersView
         workers={workers}
         selectedService="Electrician"
-        selectedLocation={{ pincode: selectedPincode, locality: 'MP Nagar', district: 'Bhopal', label: `MP Nagar (${selectedPincode})` }}
+        selectedLocation={{ pincode: selectedPincode, locality: 'Bajheri', district: 'Mohali', state: 'Punjab', label: `Bajheri, Mohali (${selectedPincode})` }}
         onBack={onFindWorker}
         onSelectWorker={onSelectWorker}
         onBookWorker={onBookWorker}

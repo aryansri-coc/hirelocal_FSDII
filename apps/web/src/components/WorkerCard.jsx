@@ -6,7 +6,8 @@ import {
   Calendar,
   Phone,
   Smartphone,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 
 export default function WorkerCard({
@@ -18,7 +19,8 @@ export default function WorkerCard({
 }) {
   const isCallbot = worker.communication_type === 'non_smartphone';
   const dailyRate = Number(worker.daily_rate) || 550;
-  const recommended = isRecommended || worker.isRecommended;
+  const isNewWorker = Number(worker.completed_jobs || 0) === 0 || String(worker.worker_id || '').includes('vapi');
+  const recommended = !isNewWorker && (isRecommended || worker.isRecommended);
 
   // Resolve profession theme color dynamically
   const prof = (worker.profession || '').toLowerCase();
@@ -74,7 +76,27 @@ export default function WorkerCard({
           <span className="hl-trade-pill-name">{worker.profession || 'Artisan'}</span>
         </div>
 
-        {recommended ? (
+        {isNewWorker ? (
+          <div
+            className="hl-new-worker-badge"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: '#ECFDF5',
+              color: '#047857',
+              border: '1px solid #A7F3D0',
+              padding: '3px 10px',
+              borderRadius: '999px',
+              fontSize: '11px',
+              fontWeight: 700,
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)'
+            }}
+          >
+            <Sparkles size={11} color="#059669" />
+            <span>✨ New Pro · Try Now!</span>
+          </div>
+        ) : recommended ? (
           <div
             className="hl-recommended-badge"
             style={{
@@ -120,11 +142,18 @@ export default function WorkerCard({
 
         {/* 3. CLEAN RATING & DISTANCE STRIP (No clutter, Rating + Jobs + Distance) */}
         <div className="hl-rating-strip">
-          <div className="hl-rating-val">
-            <Star size={13} fill="#F59E0B" color="#F59E0B" />
-            <strong>{worker.rating ? Number(worker.rating).toFixed(1) : '4.9'}</strong>
-            <span className="hl-rating-count">({worker.completed_jobs || 134} jobs)</span>
-          </div>
+          {isNewWorker ? (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#047857' }}>
+              <Sparkles size={12} color="#059669" />
+              <span>New Artisan (0 jobs) · Be 1st to Book</span>
+            </div>
+          ) : (
+            <div className="hl-rating-val">
+              <Star size={13} fill="#F59E0B" color="#F59E0B" />
+              <strong>{worker.rating ? Number(worker.rating).toFixed(1) : '5.0'}</strong>
+              <span className="hl-rating-count">({worker.completed_jobs} jobs)</span>
+            </div>
+          )}
           <div className="hl-distance-tag">
             <MapPin size={12} color="#64748B" />
             <span>{worker.distance_km || '1.8'} km away</span>

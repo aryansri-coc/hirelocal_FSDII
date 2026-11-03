@@ -14,6 +14,7 @@ import callbotRoutes from './routes/callbotRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import pincodeRoutes from './routes/pincodeRoutes.js';
+import vapiRoutes from './routes/vapiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,8 +25,8 @@ const app = express();
 // Middlewares
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'ngrok-skip-browser-warning', 'x-vapi-secret']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -89,6 +90,7 @@ app.use('/api/callbot', callbotRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/pincode', pincodeRoutes);
+app.use('/api/vapi', vapiRoutes);
 
 // Single Page Application fallback for non-API client routes
 if (fs.existsSync(webDistPath)) {

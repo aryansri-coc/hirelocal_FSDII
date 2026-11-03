@@ -34,13 +34,14 @@ export default function CallBotSimulator({
   onClose,
   initialMode = 'job_notification'
 }) {
-  const { showToast } = useAuth();
+  const { showToast, setDirectAuth } = useAuth();
 
   const [callActive, setCallActive] = useState(false);
   const [callRinging, setCallRinging] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [language, setLanguage] = useState('hi');
   const [mode, setMode] = useState(initialMode || 'job_notification');
+  const [workerPhone, setWorkerPhone] = useState('9876501234');
   const [availableJobs, setAvailableJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState(preselectedJob?.job_id || '');
   const [callLogs, setCallLogs] = useState([]);
@@ -140,8 +141,9 @@ export default function CallBotSimulator({
   };
 
   // Speech Synthesis (Bhashini Indic-TTS with Browser Fallback)
-  const speakText = async (text) => {
+  const speakText = async (text, targetLang) => {
     if (!audioEnabled || typeof window === 'undefined') return;
+    const activeLang = targetLang || language;
 
     // 1. Try Bhashini Indic-TTS if enabled and configured
     if (useBhashini && bhashiniActive) {
@@ -149,7 +151,7 @@ export default function CallBotSimulator({
         setIsSpeaking(true);
         const res = await api.synthesizeBhashini({
           text,
-          language,
+          language: activeLang,
           gender: 'female'
         });
 
@@ -175,15 +177,15 @@ export default function CallBotSimulator({
       const utterance = new SpeechSynthesisUtterance(text);
       
       // Select accurate locale
-      if (language === 'hi') utterance.lang = 'hi-IN';
-      else if (language === 'mr') utterance.lang = 'mr-IN';
-      else if (language === 'te') utterance.lang = 'te-IN';
+      if (activeLang === 'hi') utterance.lang = 'hi-IN';
+      else if (activeLang === 'mr') utterance.lang = 'mr-IN';
+      else if (activeLang === 'te') utterance.lang = 'te-IN';
       else utterance.lang = 'en-IN';
 
       utterance.rate = 0.95;
 
       const voices = window.speechSynthesis.getVoices();
-      const matchVoice = voices.find((v) => v.lang.startsWith(language));
+      const matchVoice = voices.find((v) => v.lang.startsWith(activeLang));
       if (matchVoice) utterance.voice = matchVoice;
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -251,6 +253,7 @@ export default function CallBotSimulator({
     try {
       const payload = {
         job_id: mode === 'job_notification' || mode === 'customer_order' ? (selectedJobId || null) : null,
+        phone: mode === 'worker_login' ? workerPhone : undefined,
         language,
         mode
       };
@@ -265,7 +268,7 @@ export default function CallBotSimulator({
           setBotMessage(res.step?.speechText || 'Connected');
           setCallLogs(res.conversationLog || []);
           if (res.step?.speechText) {
-            speakText(res.step.speechText);
+            speakText(res.step.speechText, res.step?.language || language);
           }
         }, 900);
       }
@@ -289,11 +292,29 @@ export default function CallBotSimulator({
       });
 
       if (res.success) {
+        // Automatic language adaptation if detected
+        const detectedLang = res.step?.detectedLanguage || res.step?.language || res.language;
+        if (detectedLang && detectedLang !== language) {
+          setLanguage(detectedLang);
+        }
+
         setCurrentState(res.step?.nextState || 'COMPLETED');
         setBotMessage(res.step?.speechText || 'Thank you.');
         setCallLogs(res.conversationLog || []);
         if (res.step?.speechText) {
-          speakText(res.step.speechText);
+          speakText(res.step.speechText, detectedLang || language);
+        }
+
+        // Voice Login Authentication Handshake
+        const authData = res.loginAuth || res.step?.loginAuth;
+        if (authData && setDirectAuth) {
+          setDirectAuth(authData);
+          showToast(`Voice login verified! Authenticated as ${authData.user?.name || 'Worker'}.`, 'success');
+          setTimeout(() => {
+            setCallActive(false);
+            if (onClose) onClose();
+          }, 2400);
+          return;
         }
 
         if (res.isComplete) {
@@ -453,6 +474,29 @@ export default function CallBotSimulator({
             Customer calls to check order status & confirm presence at home.
           </div>
         </button>
+
+        <button
+          type="button"
+          disabled={callActive}
+          onClick={() => setMode('worker_login')}
+          style={{
+            padding: '12px 14px',
+            borderRadius: '10px',
+            border: `1.5px solid ${mode === 'worker_login' ? '#D97706' : 'var(--border)'}`,
+            backgroundColor: mode === 'worker_login' ? '#FFFBEB' : 'var(--surface)',
+            textAlign: 'left',
+            cursor: callActive ? 'not-allowed' : 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '13.5px', color: mode === 'worker_login' ? '#B45309' : 'var(--dark)' }}>
+            <ShieldCheck size={16} />
+            <span>4. Worker Voice Login</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.3 }}>
+            Craftsmen dial in to authenticate via voice/DTMF and access their dashboard.
+          </div>
+        </button>
       </div>
 
       <div style={{
@@ -483,6 +527,23 @@ export default function CallBotSimulator({
                   <option value="te">Telugu (తెలుగు)</option>
                 </select>
               </div>
+
+              {mode === 'worker_login' && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>
+                    Worker Phone / फोन नंबर
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={workerPhone}
+                    onChange={(e) => setWorkerPhone(e.target.value)}
+                    placeholder="e.g. 9876501234 or 9820100000"
+                    disabled={callActive}
+                    style={{ fontSize: '13px' }}
+                  />
+                </div>
+              )}
 
               {(mode === 'job_notification' || mode === 'customer_order') && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -600,8 +661,22 @@ export default function CallBotSimulator({
                         boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
                       }}
                     >
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: isBot ? '#F45B0A' : '#2563EB', marginBottom: '3px' }}>
-                        {isBot ? '🤖 HireLocal CallBot' : '👤 Worker / Caller'}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: isBot ? '#F45B0A' : '#2563EB' }}>
+                          {isBot ? '🤖 HireLocal CallBot' : '👤 Worker / Caller'}
+                        </span>
+                        {log.ragTopic && (
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            color: '#065F46',
+                            backgroundColor: '#D1FAE5',
+                            padding: '1px 6px',
+                            borderRadius: '4px'
+                          }}>
+                            📚 RAG: {log.ragTopic.replace(/_/g, ' ')}
+                          </span>
+                        )}
                       </div>
                       <div style={{ color: 'var(--dark)', lineHeight: 1.45 }}>
                         {log.message || log.text}

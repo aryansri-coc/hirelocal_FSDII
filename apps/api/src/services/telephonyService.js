@@ -9,8 +9,10 @@ import { activeSessions } from '../controllers/callbotController.js';
  * Manages outbound telephony calls, Twilio PSTN dispatch, and alternative worker cascade on rejection.
  */
 
-export async function makeOutboundPstnCall({ toPhone, sessionId, callbackUrl }) {
-  const provider = process.env.TELEPHONY_PROVIDER || 'mock';
+export async function makeOutboundPstnCall({ toPhone, sessionId, callbackUrl, customGreeting, job, worker }) {
+  const provider = (process.env.TELEPHONY_PROVIDER || 'mock').toLowerCase();
+
+  // 1. Twilio Telephony Provider (PSTN CallBot Outbound)
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const fromNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -43,14 +45,61 @@ export async function makeOutboundPstnCall({ toPhone, sessionId, callbackUrl }) 
       }
 
       console.log(`[Telephony] Twilio Call SID: ${data.sid}, Status: ${data.status}`);
-      return { success: true, sid: data.sid, status: data.status };
+      return { success: true, sid: data.sid, status: data.status, provider: 'twilio' };
     } catch (err) {
       console.error('[Telephony] Twilio network error:', err);
       return { success: false, error: err.message };
     }
   }
 
-  // Mock / In-Memory Simulation Mode
+  // 2. Vapi AI Outbound Call Provider (Native Vapi Outbound Telephony)
+  const vapiApiKey = process.env.VAPI_API_KEY || process.env.VAPI_PRIVATE_KEY;
+  const vapiPhoneId = process.env.VAPI_PHONE_NUMBER_ID;
+  const vapiAssistantId = process.env.VAPI_ASSISTANT_ID || '85c03df2-627f-4b14-9a24-aaf5f9d6b667';
+
+  if ((provider === 'vapi' || (!accountSid && vapiApiKey)) && vapiApiKey && vapiPhoneId) {
+    try {
+      const formattedPhone = toPhone.startsWith('+') ? toPhone : `+91${toPhone}`;
+      console.log(`[Telephony Vapi] Placing automated outbound AI dispatch call to ${formattedPhone} via Vapi...`);
+
+      const vapiPayload = {
+        assistantId: vapiAssistantId,
+        phoneNumberId: vapiPhoneId,
+        customer: {
+          number: formattedPhone
+        }
+      };
+
+      if (customGreeting) {
+        vapiPayload.assistantOverrides = {
+          firstMessage: customGreeting
+        };
+      }
+
+      const response = await fetch('https://api.vapi.ai/call', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${vapiApiKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(vapiPayload)
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('[Telephony Vapi] Vapi outbound call failed:', data);
+        return { success: false, error: data };
+      }
+
+      console.log(`[Telephony Vapi] Outbound call successfully initiated! Vapi Call ID: ${data.id}, Status: ${data.status}`);
+      return { success: true, sid: data.id, status: data.status, provider: 'vapi' };
+    } catch (err) {
+      console.error('[Telephony Vapi] Network error:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 3. Mock / In-Memory Simulation Mode
   console.log(`[Telephony Mock] Outbound call placed to ${toPhone} (Session: ${sessionId}). Ready for simulator or webhook.`);
   return { success: true, sid: sessionId, status: 'queued', mock: true };
 }
@@ -105,11 +154,16 @@ export async function triggerJobOfferCall(job, worker) {
     }
   });
 
-  // Execute PSTN dial or mock queue
+  // Execute PSTN dial via Vapi, Twilio, or mock queue
+  const greeting = `नमस्ते ${worker.name} जी! HireLocal से नया काम आया है। ${job.service_type} का काम है, स्थान: ${job.address || 'मोहाली'}, दैनिक मजदूरी ₹${job.estimated_cost || worker.daily_rate || 550}। क्या आप यह काम स्वीकार करते हैं?`;
+
   const pstnResult = await makeOutboundPstnCall({
     toPhone: workerPhone,
     sessionId,
-    callbackUrl: `${process.env.API_URL || 'http://localhost:5000'}/api/callbot/webhook`
+    callbackUrl: `${process.env.API_URL || 'http://localhost:5000'}/api/callbot/webhook`,
+    customGreeting: greeting,
+    job,
+    worker
   });
 
   return {

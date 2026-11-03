@@ -35,7 +35,7 @@ export default function WorkerOnboardingModal({ onClose, onSuccess }) {
   // Form states
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [pincode, setPincode] = useState('462011');
+  const [pincode, setPincode] = useState('140413');
   const [showPincodeSelector, setShowPincodeSelector] = useState(false);
   const [address, setAddress] = useState(user?.address || 'MP Nagar');
   const [city, setCity] = useState('Bhopal');
