@@ -1,28 +1,35 @@
-# Multi-stage Dockerfile for HireLocal Web Frontend
-FROM node:22-alpine AS builder
+# ========================================================
+# HireLocal Web Frontend
+# ========================================================
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
-# Copy package manifests and shared packages
-COPY package.json package-lock.json ./
+# Copy package manifests and workspace configs
+COPY package.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages ./packages
 
-# Install dependencies
-RUN npm install
+# Install dependencies without Windows lockfile constraint to resolve Rollup native bindings
+RUN npm install --package-lock=false
 
 # Copy web application source code
 COPY apps/web ./apps/web
 
-# Build production assets
+# Build production assets with Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm --prefix apps/web run build
 
-# Stage 2: Production Nginx static server
-FROM nginx:alpine AS runner
+# Stage 2: Serve static production assets
+FROM node:22-slim AS runner
 
-COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+RUN npm install -g serve
 
-EXPOSE 80
+COPY --from=builder /app/apps/web/dist ./dist
 
-CMD ["nginx", "-g", "daemon off;"]
+ENV PORT=3000
+EXPOSE 3000
+
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]

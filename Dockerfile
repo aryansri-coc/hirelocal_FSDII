@@ -4,12 +4,12 @@
 FROM node:22-slim AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages ./packages
 
-RUN npm install --include=optional
+RUN npm install --package-lock=false
 
 COPY apps/web ./apps/web
 RUN npm --prefix apps/web run build
@@ -19,11 +19,11 @@ FROM node:22-slim AS runner
 WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev --package-lock=false
 
 COPY apps/api ./apps/api
 COPY packages ./packages
