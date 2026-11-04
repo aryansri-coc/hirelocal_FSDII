@@ -9,11 +9,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n \"api,web\" -c \"blue,green\" \"npm run dev:api\" \"npm run dev:web\"",
-    "start": "node apps/api/src/server.js",
-    "build": "npm --prefix apps/web run build",
-    "dev:api": "node --watch apps/api/src/server.js",
-    "dev:web": "npm --prefix apps/web run dev",
+    "dev": "node init && concurrently -n \"api,web\" -c \"blue,green\" \"npm run dev:api\" \"npm run dev:web\"",
+    "start": "node init && node apps/api/src/server.js",
+    "build": "node init && npm --prefix apps/web run build",
+    "dev:api": "node init && node --watch apps/api/src/server.js",
+    "dev:web": "node init && npm --prefix apps/web run dev",
     "db:init": "node database/initPg.js",
     "db:seed": "node database/initPg.js",
     "seed": "node database/initPg.js",

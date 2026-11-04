@@ -54,7 +54,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-plumber',
     color: '#0284C7',
     tagline: 'Leaks, sanitary, tap fittings & pumps',
-    badge: '0 Pros'
+    badge: '1 Pro'
   },
   {
     id: 'mechanic',
@@ -64,7 +64,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-mechanic',
     color: '#DC2626',
     tagline: 'AC servicing, compressor, motor & pumps',
-    badge: '0 Pros'
+    badge: '1 Pro'
   },
   {
     id: 'carpenter',
@@ -74,7 +74,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-carpenter',
     color: '#D97706',
     tagline: 'Furniture repair, locks, custom woodwork',
-    badge: '0 Pros'
+    badge: '1 Pro'
   },
   {
     id: 'painter',
@@ -84,7 +84,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-painter',
     color: '#16A34A',
     tagline: 'Interior/exterior putty, waterproof, textures',
-    badge: '0 Pros'
+    badge: '1 Pro'
   },
   {
     id: 'appliance',
@@ -94,7 +94,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-appliance',
     color: '#7C3AED',
     tagline: 'Washing machine, fridge, microwave, RO',
-    badge: '0 Pros'
+    badge: '1 Pro'
   },
   {
     id: 'cleaning',
@@ -104,7 +104,7 @@ export const TRADE_CATEGORIES = [
     className: 'hl-trade-card-cleaning',
     color: '#0D9488',
     tagline: 'Full home, kitchen, bathroom sanitization',
-    badge: '0 Pros'
+    badge: '1 Pro'
   }
 ];
 
