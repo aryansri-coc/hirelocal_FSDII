@@ -505,4 +505,107 @@ describe('Vapi AI Voice Assistant Integration API', () => {
     assert.ok(['REJECTED', 'PENDING_WORKER_RESPONSE'].includes(updatedJob.status));
     assert.notEqual(updatedJob.worker_id, worker?.worker_id, 'Job should be reassigned to alternative worker by auto-cascade');
   });
+
+  test('POST /api/vapi/webhook should announce ongoing job completion prompt on inbound call when worker has active accepted job', async () => {
+    const { db } = await import('../../../database/db.js');
+    const testPhone = '9827088888';
+    db.insert('workers', {
+      worker_id: 'wrk_test_ongoing_phone',
+      name: 'Ramesh Test',
+      phone: testPhone,
+      profession: 'Plumber',
+      daily_rate: 600,
+      communication_type: 'non_smartphone',
+      verified: true
+    });
+    const testJobId = `job_test_ongoing_${Date.now()}`;
+    db.insert('jobs', {
+      job_id: testJobId,
+      customer_id: 'usr_customer_1',
+      customer_name: 'Customer Test',
+      customer_phone: '9876501234',
+      worker_id: 'wrk_test_ongoing_phone',
+      worker_name: 'Ramesh Test',
+      worker_phone: testPhone,
+      service_type: 'Plumber',
+      address: 'Bajheri, Mohali',
+      estimated_cost: 600,
+      status: 'ACCEPTED',
+      created_at: new Date().toISOString()
+    });
+
+    const res = await apiRequest('/api/vapi/webhook', {
+      method: 'POST',
+      body: {
+        message: {
+          type: 'assistant-request',
+          call: {
+            id: 'call_ongoing_check_001',
+            customer: {
+              number: `+91${testPhone}`
+            }
+          }
+        }
+      }
+    });
+
+    assert.equal(res.status, 200);
+    assert.ok(res.data.assistantOverrides);
+    assert.ok(res.data.assistantOverrides.firstMessage.includes('काम चल रहा है') || res.data.assistantOverrides.firstMessage.includes('काम पूरा'));
+  });
+
+  test('POST /api/vapi/ask-project-knowledge should transition accepted job to COMPLETED when worker says काम पूरा हो गया', async () => {
+    const { db } = await import('../../../database/db.js');
+    const worker = db.findOne('workers', (w) => w.phone === '9827033445');
+    const testJobId = `job_test_complete_${Date.now()}`;
+    db.insert('jobs', {
+      job_id: testJobId,
+      customer_id: 'usr_customer_1',
+      customer_name: 'Customer Test',
+      customer_phone: '9876501234',
+      worker_id: worker?.worker_id || 'wrk_1',
+      worker_name: worker?.name || 'Mukesh Kumar',
+      worker_phone: '9827033445',
+      service_type: 'Electrician',
+      address: 'Bajheri, Mohali',
+      estimated_cost: 550,
+      status: 'ACCEPTED',
+      created_at: new Date().toISOString()
+    });
+
+    const payload = {
+      message: {
+        call: {
+          id: 'call_voice_complete_session_1',
+          customer: {
+            number: '+919827033445'
+          }
+        },
+        toolCalls: [
+          {
+            id: 'call_complete_tool_001',
+            type: 'function',
+            function: {
+              name: 'ask_project_knowledge',
+              arguments: {
+                question: 'काम पूरा हो गया है जी'
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    const res = await apiRequest('/api/vapi/ask-project-knowledge', {
+      method: 'POST',
+      body: payload
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.data.results[0].toolCallId, 'call_complete_tool_001');
+    assert.ok(res.data.results[0].result.includes('पूरा दर्ज कर लिया गया है'));
+
+    const updatedJob = db.findById('jobs', 'job_id', testJobId);
+    assert.equal(updatedJob.status, 'COMPLETED');
+  });
 });

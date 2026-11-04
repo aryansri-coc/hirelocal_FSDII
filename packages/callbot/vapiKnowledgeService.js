@@ -13,6 +13,7 @@ import { getCoordinatesForPincode } from '../../apps/api/src/routes/pincodeRoute
 import { triggerJobOfferCall, handleWorkerRejection } from '../../apps/api/src/services/telephonyService.js';
 import { JOB_STATUS } from '../shared/statusVocabulary.js';
 import { sendJobSmsNotification } from '../../apps/api/src/services/smsService.js';
+import { updateWorkerReliabilityOnCompletion } from '../services/reliabilityCalculator.js';
 
 /**
  * Checks if Bhashini is fully configured with valid (non-placeholder) credentials
@@ -128,8 +129,9 @@ export async function answerProjectKnowledge(question, context = {}) {
     callerWorkerForJob = db.findOne('workers', (w) => w.name && w.name.toLowerCase().includes(voiceSession.name.toLowerCase()));
   }
 
-  // Check if any job is pending for this worker or phone
+  // Check if any job is pending or active ongoing for this worker or phone
   let pendingJobForWorker = null;
+  let ongoingJobForWorker = null;
   let targetJobForPhone = null;
 
   if (checkPhoneForJob || callerWorkerForJob) {
@@ -147,11 +149,17 @@ export async function answerProjectKnowledge(question, context = {}) {
         targetJobForPhone.status === 'REQUESTED'
       ) {
         pendingJobForWorker = targetJobForPhone;
+      } else if (
+        targetJobForPhone.status === JOB_STATUS.ACCEPTED ||
+        targetJobForPhone.status === 'ACCEPTED' ||
+        targetJobForPhone.status === 'in_progress'
+      ) {
+        ongoingJobForWorker = targetJobForPhone;
       }
     }
   }
 
-  // Fallback: check if there is an active pending job in the marketplace
+  // Fallback: check if there is an active pending or ongoing job in the marketplace
   if (!pendingJobForWorker) {
     const pendingJobs = db.find('jobs', (j) =>
       (j.status === JOB_STATUS.PENDING_WORKER_RESPONSE || j.status === 'pending_worker_response' || j.status === 'offered' || j.status === 'REQUESTED') &&
@@ -165,6 +173,16 @@ export async function answerProjectKnowledge(question, context = {}) {
         callerWorkerForJob = wrk;
         targetJobForPhone = candidate;
       }
+    }
+  }
+
+  if (!ongoingJobForWorker && callerWorkerForJob) {
+    const ongoingJobs = db.find('jobs', (j) =>
+      j.worker_id === callerWorkerForJob.worker_id &&
+      (j.status === JOB_STATUS.ACCEPTED || j.status === 'ACCEPTED' || j.status === 'in_progress')
+    );
+    if (ongoingJobs && ongoingJobs.length > 0) {
+      ongoingJobForWorker = ongoingJobs[ongoingJobs.length - 1];
     }
   }
 
@@ -276,6 +294,43 @@ export async function answerProjectKnowledge(question, context = {}) {
       language: detectedLang
     }, context);
     return cleanForVoiceSpeech(rejectRes.message);
+  }
+
+  // Job Completion words (Hindi Devanagari, Hinglish, English, Urdu/Arabic script)
+  const isJobCompletion =
+    qLower.includes('kam pura ho gaya') ||
+    qLower.includes('kaam pura ho gaya') ||
+    qLower.includes('kaam pura') ||
+    qLower.includes('kaam ho gaya') ||
+    qLower.includes('kam ho gaya') ||
+    qLower.includes('kaam khatam') ||
+    qLower.includes('kam khatam') ||
+    qLower.includes('pura ho gaya') ||
+    qLower.includes('ho gaya') ||
+    qLower.includes('काम पूरा हो गया') ||
+    qLower.includes('काम पूरा') ||
+    qLower.includes('काम हो गया') ||
+    qLower.includes('काम खत्म') ||
+    qLower.includes('पूरा हो गया') ||
+    qLower.includes('हो गया काम') ||
+    qLower.includes('مکمل ہو گیا') ||
+    qLower.includes('job completed') ||
+    qLower.includes('job done') ||
+    qLower.includes('work completed') ||
+    qLower.includes('work done') ||
+    qLower.includes('mark complete') ||
+    qLower.includes('mark as completed') ||
+    ((isJobAcceptance || qLower.trim() === '1') && ongoingJobForWorker && !pendingJobForWorker);
+
+  // Handle Job Completion ("काम पूरा हो गया" / "job completed")
+  if (ongoingJobForWorker && isJobCompletion) {
+    const completeRes = await completeJobViaVoice({
+      job_id: ongoingJobForWorker.job_id,
+      worker_id: callerWorkerForJob?.worker_id,
+      phone: checkPhoneForJob,
+      language: detectedLang
+    }, context);
+    return cleanForVoiceSpeech(completeRes.message);
   }
 
   // Handle Work & Booking Inquiry
@@ -1130,5 +1185,142 @@ export async function respondToJobOfferViaVoice(params = {}, context = {}) {
     message: lang === 'en'
       ? `Would you like to accept or decline the job offer for ${targetJob.service_type}? Please say 'Yes' to accept or 'No' to decline.`
       : `क्या आप ${targetJob.service_type} का काम स्वीकार करना चाहते हैं या मना करना चाहते हैं? कृपया 'हाँ' या 'ना' बताएं।`
+  };
+}
+
+/**
+ * Handles Job Completion decision triggered over telephone voice call
+ * Transitions job to COMPLETED, updates worker reliability, and dispatches SMS rating request to customer
+ */
+export async function completeJobViaVoice(params = {}, context = {}) {
+  let args = {};
+  if (typeof params === 'string') {
+    try {
+      args = JSON.parse(params);
+    } catch {
+      args = { action: params };
+    }
+  } else if (typeof params === 'object' && params !== null) {
+    args = params;
+  }
+
+  // 1. Resolve phone number
+  let phone = String(args.phone || args.worker_phone || context.customerPhone || '').replace(/\D/g, '');
+  if (phone.length > 10) phone = phone.slice(-10);
+
+  const sessionKey = context.callId || context.customerPhone || 'voice_session_default';
+  const voiceSession = activeVoiceSessions.get(sessionKey);
+  if (!phone && voiceSession?.phone) {
+    phone = voiceSession.phone;
+  }
+
+  // 2. Identify worker
+  let worker = phone ? db.findOne('workers', (w) => w.phone && String(w.phone).includes(phone)) : null;
+  if (!worker && args.worker_id) {
+    worker = db.findById('workers', 'worker_id', args.worker_id);
+  }
+  if (!worker && voiceSession?.name) {
+    worker = db.findOne('workers', (w) => w.name && w.name.toLowerCase().includes(voiceSession.name.toLowerCase()));
+  }
+  if (!worker) {
+    worker = db.findOne('workers', (w) => w.name && w.name.toLowerCase().includes('aryan')) || db.find('workers')[0];
+  }
+
+  const workerName = worker?.name || 'कारीगर साथी';
+  const workerId = worker?.worker_id;
+
+  // 3. Find target accepted / ongoing job
+  let targetJob = null;
+  if (args.job_id) {
+    targetJob = db.findById('jobs', 'job_id', args.job_id);
+  }
+  if (!targetJob && workerId) {
+    const acceptedJobs = db.find('jobs', (j) =>
+      (j.worker_id === workerId || (phone && j.worker_phone && String(j.worker_phone).includes(phone))) &&
+      (j.status === JOB_STATUS.ACCEPTED || j.status === 'ACCEPTED' || j.status === 'in_progress')
+    );
+    if (acceptedJobs && acceptedJobs.length > 0) {
+      targetJob = acceptedJobs[acceptedJobs.length - 1];
+    }
+  }
+  if (!targetJob) {
+    const anyAccepted = db.find('jobs', (j) =>
+      j.status === JOB_STATUS.ACCEPTED || j.status === 'ACCEPTED'
+    );
+    if (anyAccepted && anyAccepted.length > 0) {
+      targetJob = anyAccepted[anyAccepted.length - 1];
+    }
+  }
+
+  const lang = String(args.language || voiceSession?.language || 'hi').startsWith('en') ? 'en' : 'hi';
+
+  if (!targetJob) {
+    const msg = lang === 'en'
+      ? `Hello ${workerName}, there are no active ongoing jobs waiting to be marked complete on your profile right now.`
+      : `नमस्ते ${workerName} जी, आपके खाते पर इस समय कोई चालू काम पूरा करने के लिए पेंडिंग नहीं है।`;
+    return {
+      success: false,
+      message: cleanForVoiceSpeech(msg)
+    };
+  }
+
+  // Transition to COMPLETED
+  db.update('jobs', (j) => j.job_id === targetJob.job_id, {
+    status: JOB_STATUS.COMPLETED,
+    updated_at: new Date().toISOString()
+  });
+
+  // Update worker reliability metrics
+  if (worker) {
+    const updatedMetrics = updateWorkerReliabilityOnCompletion(worker);
+    db.update('workers', (w) => w.worker_id === worker.worker_id, updatedMetrics);
+  }
+
+  // Notify customer
+  db.addNotification({
+    userId: targetJob.customer_id,
+    title: 'Service Completed! ⭐',
+    message: `${workerName} has completed your ${targetJob.service_type} work at ${targetJob.address}. Please rate your experience to support local artisans!`,
+    type: 'job_completed',
+    entityType: 'job',
+    entityId: targetJob.job_id
+  });
+
+  db.addAuditLog({
+    actorId: worker?.user_id || workerId || 'voice_worker',
+    actorName: workerName,
+    action: 'JOB_COMPLETED_VIA_VAPI_VOICE_CALL',
+    entityType: 'job',
+    entityId: targetJob.job_id,
+    source: 'vapi',
+    metadata: {
+      worker_id: workerId,
+      phone,
+      service: targetJob.service_type,
+      cost: targetJob.estimated_cost
+    }
+  });
+
+  // Send SMS to customer asking for rating
+  const customerPhone = targetJob.customer_phone;
+  if (customerPhone) {
+    const smsText = `नमस्ते! ${workerName} जी ने आपका ${targetJob.service_type} का काम पूरा कर दिया है। कृपया कारीगर की सहायता के लिए HireLocal पर 5-स्टार रेटिंग दें। धन्यवाद! - HireLocal`;
+    sendJobSmsNotification({
+      toPhone: customerPhone,
+      message: smsText,
+      title: 'Customer Job Completed SMS'
+    }).catch((e) => console.warn('[SMS] Dispatch notice:', e.message));
+  }
+
+  const speech = lang === 'en'
+    ? `Great job ${workerName}! Your ${targetJob.service_type} service at ${targetJob.address} has been recorded as completed. Your daily wage of ${targetJob.estimated_cost} rupees and profile reliability score have been updated. The customer has been notified to rate your service. Thank you!`
+    : `बहुत बढ़िया ${workerName} जी! आपका ${targetJob.service_type} का काम सफलतापूर्वक पूरा दर्ज कर लिया गया है। आपकी दैनिक मजदूरी ₹${targetJob.estimated_cost} और विश्वसनीयता स्कोर अपडेट कर दिया गया है। ग्राहक को रेटिंग देने के लिए संदेश भेज दिया गया है। HireLocal से जुड़ने के लिए धन्यवाद!`;
+
+  return {
+    success: true,
+    decision: 'COMPLETED',
+    job_id: targetJob.job_id,
+    worker_id: workerId,
+    message: cleanForVoiceSpeech(speech)
   };
 }

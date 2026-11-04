@@ -147,6 +147,30 @@ export default function MyBookingsView({
     }
   };
 
+  const handleCompleteBooking = async (booking) => {
+    try {
+      if (booking.job_id.startsWith('bk_')) {
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.job_id === booking.job_id
+              ? { ...b, status: 'COMPLETED', displayStatus: 'Completed', statusColor: 'completed' }
+              : b
+          )
+        );
+      } else {
+        await api.updateJobStatus(booking.job_id, JOB_STATUS.COMPLETED);
+        await loadBookings();
+      }
+      showToast(`Work completed! Please rate ${booking.worker_name}.`, 'success');
+      setRatingBooking(booking);
+      if (selectedBookingDetails?.job_id === booking.job_id) {
+        setSelectedBookingDetails(null);
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to complete booking', 'danger');
+    }
+  };
+
   const handleRateSubmit = async (e) => {
     e.preventDefault();
     if (!ratingBooking) return;
@@ -320,6 +344,32 @@ export default function MyBookingsView({
                         </button>
                       )}
 
+                      {/* Mark Completed action for customer */}
+                      {(isConfirmed || booking.status === 'ACCEPTED' || booking.status === JOB_STATUS.ACCEPTED) && !isCompleted && !isCancelled && (
+                        <button
+                          type="button"
+                          className="hl-btn-complete-booking"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            backgroundColor: '#10B981',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            padding: '7px 14px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleCompleteBooking(booking)}
+                          title="Confirm that work is completed"
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>Mark Completed</span>
+                        </button>
+                      )}
+
                       {/* Cancel action */}
                       {!isCompleted && !isCancelled && (
                         <button
@@ -463,14 +513,26 @@ export default function MyBookingsView({
 
             <div className="hl-modal-footer">
               {selectedBookingDetails.statusColor !== 'cancelled' && selectedBookingDetails.statusColor !== 'completed' && (
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  style={{ color: '#DC2626', borderColor: '#FECACA' }}
-                  onClick={() => handleCancelBooking(selectedBookingDetails)}
-                >
-                  Cancel Booking
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                    onClick={() => handleCancelBooking(selectedBookingDetails)}
+                  >
+                    Cancel Booking
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ backgroundColor: '#10B981', color: '#FFFFFF', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => handleCompleteBooking(selectedBookingDetails)}
+                  >
+                    <CheckCircle2 size={13} />
+                    <span>Mark Completed</span>
+                  </button>
+                </>
               )}
 
               <button

@@ -11,7 +11,8 @@ import {
   answerProjectKnowledge,
   registerWorkerViaVoice,
   bookWorkerViaVoice,
-  respondToJobOfferViaVoice
+  respondToJobOfferViaVoice,
+  completeJobViaVoice
 } from '../../../../packages/callbot/vapiKnowledgeService.js';
 import { db } from '../../../../database/db.js';
 import { JOB_STATUS } from '../../../../packages/shared/statusVocabulary.js';
@@ -139,7 +140,17 @@ async function processToolCall(tc, context = {}) {
       };
     }
 
-    // 3. Worker Job Offer Decision (Accept / Reject)
+    // 3. Worker Job Completion Decision
+    if (fnName.includes('complete') || fnName.includes('finish') || fnName.includes('done')) {
+      const completeResult = await completeJobViaVoice(rawArgs, context);
+      return {
+        toolCallId,
+        result: completeResult.message,
+        data: completeResult
+      };
+    }
+
+    // 4. Worker Job Offer Decision (Accept / Reject)
     if (fnName.includes('job') || fnName.includes('offer') || fnName.includes('accept') || fnName.includes('reject') || fnName.includes('respond')) {
       const decisionResult = await respondToJobOfferViaVoice(rawArgs, context);
       return {
@@ -149,7 +160,7 @@ async function processToolCall(tc, context = {}) {
       };
     }
 
-    // 4. Project Knowledge & Q&A (Default)
+    // 5. Project Knowledge & Q&A (Default)
     const question = extractQuestionFromArguments(rawArgs);
     let answer = '';
     if (!question) {
@@ -197,12 +208,22 @@ export async function handleVapiKnowledgeQuery(req, res, next) {
       ) : [];
       const pendingJob = pendingJobs.length > 0 ? pendingJobs[pendingJobs.length - 1] : null;
 
+      // Check if there is an active ongoing (ACCEPTED) job for this worker
+      const ongoingJobs = existingWorker ? db.find('jobs', (j) =>
+        (j.worker_id === existingWorker.worker_id || (j.worker_phone && String(j.worker_phone).includes(cleanPhone))) &&
+        (j.status === JOB_STATUS.ACCEPTED || j.status === 'ACCEPTED' || j.status === 'in_progress')
+      ) : [];
+      const ongoingJob = ongoingJobs.length > 0 ? ongoingJobs[ongoingJobs.length - 1] : null;
+
       let dynamicGreeting = '';
       let isRegistered = false;
 
       if (existingWorker && pendingJob) {
         isRegistered = true;
         dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका स्वागत है। आपके लिए एक नया काम पेंडिंग है: ${pendingJob.service_type || existingWorker.profession} का काम, स्थान ${pendingJob.address || 'मोहाली'}, दैनिक मजदूरी ₹${pendingJob.estimated_cost || existingWorker.daily_rate}। क्या आप यह काम स्वीकार करते हैं? कृपया 'हाँ' या 'ना' बताएं।`;
+      } else if (existingWorker && ongoingJob) {
+        isRegistered = true;
+        dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका स्वागत है। आपका ${ongoingJob.service_type || existingWorker.profession} का काम चल रहा है। क्या आपने यह काम पूरा कर लिया है? अगर काम पूरा हो गया है, तो कृपया 'काम पूरा हो गया' कहें या 1 दबाएँ।`;
       } else if (existingWorker) {
         isRegistered = true;
         dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका फिर से स्वागत है। आप एक वेरीफाइड ${existingWorker.profession} के रूप में रजिस्टर्ड हैं। आज हम आपकी क्या सहायता कर सकते हैं?`;

@@ -433,6 +433,20 @@ export default function CustomerDashboard({
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontWeight: 700, fontSize: '15px' }}>₹{job.estimated_cost}</span>
+                        {job.status === JOB_STATUS.ACCEPTED && (
+                          <button
+                            className="btn btn-sm"
+                            style={{ backgroundColor: '#10B981', color: '#FFFFFF', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            onClick={async () => {
+                              await handleStatusChange(job.job_id, JOB_STATUS.COMPLETED);
+                              setActiveRatingJob(job);
+                              setRatingVal(5);
+                            }}
+                          >
+                            <CheckCircle size={13} />
+                            <span>Mark Completed</span>
+                          </button>
+                        )}
                         {job.status === JOB_STATUS.COMPLETED && !job.has_rated && (
                           <button
                             className="btn btn-secondary btn-sm"
