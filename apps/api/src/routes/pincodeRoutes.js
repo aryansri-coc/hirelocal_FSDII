@@ -5,7 +5,7 @@ const pincodeCache = new Map();
 
 // Top Pan-India Hubs with verified postal pincodes & localities
 const PAN_INDIA_POPULAR_HUBS = [
-  { name: 'Bajheri / Gharuan', locality: 'Bajheri', district: 'Mohali', state: 'Punjab', pincode: '140413', label: 'Bajheri, Mohali, Punjab (140413)', workersCount: 1, lat: 30.7516, lng: 76.5912 },
+  { name: 'Bajheri / Gharuan', locality: 'Bajheri', district: 'Mohali', state: 'Punjab', pincode: '140413', label: 'Bajheri, Mohali, Punjab (140413)', workersCount: 7, lat: 30.7516, lng: 76.5912 },
   { name: 'Aurangabad (BH)', locality: 'Aurangabad', district: 'Aurangabad(BH)', state: 'Bihar', pincode: '824101', label: 'Aurangabad, Bihar (824101)', workersCount: 4, lat: 24.7538, lng: 84.3736 },
   { name: 'Dadeha Sahib / Sarhali', locality: 'Sarhali', district: 'Amritsar', state: 'Punjab', pincode: '143410', label: 'Amritsar / Tarn Taran (143410)', workersCount: 3, lat: 31.3256, lng: 74.9213 },
   { name: 'MP Nagar', locality: 'MP Nagar', district: 'Bhopal', state: 'Madhya Pradesh', pincode: '462011', label: 'MP Nagar, Bhopal (462011)', workersCount: 4, lat: 23.2332, lng: 77.4343 },

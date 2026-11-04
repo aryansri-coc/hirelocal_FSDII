@@ -295,14 +295,14 @@ describe('Vapi AI Voice Assistant Integration API', () => {
     assert.ok(regRes.data.assistantOverrides.firstMessage.includes('Mukesh') || regRes.data.assistantOverrides.firstMessage.includes('मुकेश'));
     assert.equal(regRes.data.assistantOverrides.variableValues.isRegistered, 'true');
 
-    // 2. Unregistered caller ID (+919905817179)
+    // 2. Unregistered caller ID (+919800000001)
     const unknownPayload = {
       message: {
         type: 'assistant-request',
         call: {
           id: 'call_unregistered_002',
           customer: {
-            number: '+919905817179'
+            number: '+919800000001'
           }
         }
       }
