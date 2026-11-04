@@ -69,14 +69,17 @@ app.get('/', (req, res) => {
   if (fs.existsSync(webDistPath)) {
     return res.sendFile(path.join(webDistPath, 'index.html'));
   }
-  if (req.accepts('html')) {
-    return res.redirect('http://localhost:5173');
-  }
-  res.json({
-    name: 'HireLocal API',
+  return res.json({
+    name: 'HireLocal API Server',
     status: 'running',
-    frontend: 'http://localhost:5173',
-    health: '/api/health'
+    version: '1.0.0',
+    health: '/api/health',
+    endpoints: {
+      auth: '/api/auth',
+      workers: '/api/workers',
+      jobs: '/api/jobs',
+      vapiWebhook: '/api/vapi/webhook'
+    }
   });
 });
 
