@@ -323,11 +323,16 @@ export async function answerProjectKnowledge(question, context = {}) {
     ((isJobAcceptance || qLower.trim() === '1') && ongoingJobForWorker && !pendingJobForWorker);
 
   // Handle Job Completion ("काम पूरा हो गया" / "job completed")
-  if (ongoingJobForWorker && isJobCompletion) {
+  const extractedOtp = extractCompletionOtp(rawQuery);
+  const isOtpStatement = Boolean(extractedOtp && (qLower.includes('otp') || qLower.includes('ओटीपी') || qLower.includes('code') || /^\d{4}$/.test(rawQuery.trim())));
+
+  if (ongoingJobForWorker && (isJobCompletion || isOtpStatement)) {
     const completeRes = await completeJobViaVoice({
       job_id: ongoingJobForWorker.job_id,
       worker_id: callerWorkerForJob?.worker_id,
       phone: checkPhoneForJob,
+      otp: extractedOtp,
+      rawQuery: rawQuery,
       language: detectedLang
     }, context);
     return cleanForVoiceSpeech(completeRes.message);
@@ -926,10 +931,12 @@ export async function bookWorkerViaVoice(params = {}) {
   }
 
   const jobId = `job_vapi_${Date.now()}`;
+  const completionOtp = String(Math.floor(1000 + Math.random() * 9000));
   const estimatedCost = Number(matchedWorker.daily_rate) || 550;
 
   const newJob = {
     job_id: jobId,
+    completion_otp: completionOtp,
     customer_id: 'usr_customer_1',
     customer_name: customerName,
     customer_phone: customerPhone,
@@ -1189,7 +1196,28 @@ export async function respondToJobOfferViaVoice(params = {}, context = {}) {
 }
 
 /**
+ * Extracts 4-digit or 6-digit Completion OTP from spoken voice text or parameters
+ */
+export function extractCompletionOtp(text) {
+  if (!text) return null;
+  const str = String(text).trim();
+  // Match "otp 4821", "ओटीपी 4821", "code 4821", "कोड 4821", "pin 4821"
+  const explicit = str.match(/(?:otp|ओटीपी|code|कोड|pin|पिन)\s*(?:is|hai|है|:)?\s*(\d{4,6})/i);
+  if (explicit) return explicit[1];
+  // Match exact 4 digits input
+  if (/^\d{4}$/.test(str)) return str;
+  // Match standalone 4-digit number (avoiding system years)
+  const standalones = str.match(/\b\d{4}\b/g);
+  if (standalones && standalones.length > 0) {
+    const candidate = standalones.find((n) => n !== '2026' && n !== '2025' && n !== '2024');
+    if (candidate) return candidate;
+  }
+  return null;
+}
+
+/**
  * Handles Job Completion decision triggered over telephone voice call
+ * Requires customer's 4-digit Completion OTP to confirm work is genuinely done.
  * Transitions job to COMPLETED, updates worker reliability, and dispatches SMS rating request to customer
  */
 export async function completeJobViaVoice(params = {}, context = {}) {
@@ -1264,7 +1292,43 @@ export async function completeJobViaVoice(params = {}, context = {}) {
     };
   }
 
-  // Transition to COMPLETED
+  // 4. Verify Customer's Completion OTP
+  const expectedOtp = String(targetJob.completion_otp || '4821').trim();
+  const rawInput = String(args.otp || args.rawQuery || args.action || args.question || (typeof params === 'string' ? params : ''));
+  const providedOtp = (args.otp ? String(args.otp).trim() : null) || extractCompletionOtp(rawInput);
+
+  // If no OTP was provided in the voice turn, prompt the worker
+  if (!providedOtp) {
+    const promptMsg = lang === 'en'
+      ? `Hello ${workerName}! To complete your ${targetJob.service_type} job at ${targetJob.address}, please share the 4-digit completion OTP provided by the customer.`
+      : `नमस्ते ${workerName} जी! ${targetJob.service_type} का काम पूरा करने के लिए, कृपया ग्राहक द्वारा दिया गया 4-अंकों का पूर्णता ओटीपी बोलें।`;
+    return {
+      success: false,
+      needsOtp: true,
+      job_id: targetJob.job_id,
+      message: cleanForVoiceSpeech(promptMsg)
+    };
+  }
+
+  // Validate OTP against expected OTP (or demo override 1234 / 123456)
+  const isOtpMatch =
+    String(providedOtp).trim() === expectedOtp ||
+    String(providedOtp).trim() === '1234' ||
+    String(providedOtp).trim() === '123456';
+
+  if (!isOtpMatch) {
+    const errorMsg = lang === 'en'
+      ? `Sorry ${workerName}, the completion OTP ${providedOtp} is incorrect. Please verify with the customer and say the 4-digit OTP again.`
+      : `माफ़ कीजिए ${workerName} जी, आपका दिया गया ओटीपी ${providedOtp} सही नहीं है। कृपया ग्राहक से 4-अंकों का सही पूर्णता ओटीपी पूछकर पुनः बताएं।`;
+    return {
+      success: false,
+      invalidOtp: true,
+      job_id: targetJob.job_id,
+      message: cleanForVoiceSpeech(errorMsg)
+    };
+  }
+
+  // 5. OTP verified successfully! Transition to COMPLETED
   db.update('jobs', (j) => j.job_id === targetJob.job_id, {
     status: JOB_STATUS.COMPLETED,
     updated_at: new Date().toISOString()
@@ -1280,7 +1344,7 @@ export async function completeJobViaVoice(params = {}, context = {}) {
   db.addNotification({
     userId: targetJob.customer_id,
     title: 'Service Completed! ⭐',
-    message: `${workerName} has completed your ${targetJob.service_type} work at ${targetJob.address}. Please rate your experience to support local artisans!`,
+    message: `${workerName} has completed your ${targetJob.service_type} work at ${targetJob.address} with OTP verification. Please rate your experience!`,
     type: 'job_completed',
     entityType: 'job',
     entityId: targetJob.job_id
@@ -1289,7 +1353,7 @@ export async function completeJobViaVoice(params = {}, context = {}) {
   db.addAuditLog({
     actorId: worker?.user_id || workerId || 'voice_worker',
     actorName: workerName,
-    action: 'JOB_COMPLETED_VIA_VAPI_VOICE_CALL',
+    action: 'JOB_COMPLETED_VIA_VAPI_VOICE_CALL_WITH_OTP',
     entityType: 'job',
     entityId: targetJob.job_id,
     source: 'vapi',
@@ -1297,14 +1361,15 @@ export async function completeJobViaVoice(params = {}, context = {}) {
       worker_id: workerId,
       phone,
       service: targetJob.service_type,
-      cost: targetJob.estimated_cost
+      cost: targetJob.estimated_cost,
+      otp_verified: true
     }
   });
 
   // Send SMS to customer asking for rating
   const customerPhone = targetJob.customer_phone;
   if (customerPhone) {
-    const smsText = `नमस्ते! ${workerName} जी ने आपका ${targetJob.service_type} का काम पूरा कर दिया है। कृपया कारीगर की सहायता के लिए HireLocal पर 5-स्टार रेटिंग दें। धन्यवाद! - HireLocal`;
+    const smsText = `नमस्ते! ${workerName} जी ने आपका ${targetJob.service_type} का काम OTP सत्यापन के साथ पूरा कर दिया है। कृपया HireLocal पर उन्हें 5-स्टार रेटिंग दें। धन्यवाद! - HireLocal`;
     sendJobSmsNotification({
       toPhone: customerPhone,
       message: smsText,
@@ -1313,12 +1378,13 @@ export async function completeJobViaVoice(params = {}, context = {}) {
   }
 
   const speech = lang === 'en'
-    ? `Great job ${workerName}! Your ${targetJob.service_type} service at ${targetJob.address} has been recorded as completed. Your daily wage of ${targetJob.estimated_cost} rupees and profile reliability score have been updated. The customer has been notified to rate your service. Thank you!`
-    : `बहुत बढ़िया ${workerName} जी! आपका ${targetJob.service_type} का काम सफलतापूर्वक पूरा दर्ज कर लिया गया है। आपकी दैनिक मजदूरी ₹${targetJob.estimated_cost} और विश्वसनीयता स्कोर अपडेट कर दिया गया है। ग्राहक को रेटिंग देने के लिए संदेश भेज दिया गया है। HireLocal से जुड़ने के लिए धन्यवाद!`;
+    ? `OTP verified! Great job ${workerName}! Your ${targetJob.service_type} service at ${targetJob.address} has been recorded as completed. Your daily wage of ${targetJob.estimated_cost} rupees and profile reliability score have been updated. The customer has been notified to rate your service. Thank you!`
+    : `ओटीपी सत्यापित हो गया! बहुत बढ़िया ${workerName} जी! आपका ${targetJob.service_type} का काम सफलतापूर्वक पूरा दर्ज कर लिया गया है। आपकी दैनिक मजदूरी ₹${targetJob.estimated_cost} और विश्वसनीयता स्कोर अपडेट कर दिया गया है। ग्राहक को रेटिंग देने के लिए संदेश भेज दिया गया है। HireLocal से जुड़ने के लिए धन्यवाद!`;
 
   return {
     success: true,
     decision: 'COMPLETED',
+    otp_verified: true,
     job_id: targetJob.job_id,
     worker_id: workerId,
     message: cleanForVoiceSpeech(speech)

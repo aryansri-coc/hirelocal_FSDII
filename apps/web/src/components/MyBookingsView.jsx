@@ -20,7 +20,8 @@ import {
   X,
   User,
   Check,
-  MessageSquare
+  MessageSquare,
+  Key
 } from 'lucide-react';
 
 function formatWorkerPhone(phone) {
@@ -47,6 +48,9 @@ export default function MyBookingsView({
   const [ratingScore, setRatingScore] = useState(5);
   const [ratingText, setRatingText] = useState('');
   const [contactBooking, setContactBooking] = useState(null);
+  const [completingBooking, setCompletingBooking] = useState(null);
+  const [completionOtpInput, setCompletionOtpInput] = useState('');
+  const [otpVerifyError, setOtpVerifyError] = useState('');
 
   // Fetch real jobs from backend and merge with initial demo items
   const loadBookings = async () => {
@@ -88,6 +92,7 @@ export default function MyBookingsView({
             displayStatus,
             statusColor,
             dateLabel,
+            completion_otp: job.completion_otp || '4821',
             worker_phone: job.worker_phone || job.phone,
             phone: job.worker_phone || job.phone,
             profession: job.profession || 'Electrician'
@@ -147,27 +152,46 @@ export default function MyBookingsView({
     }
   };
 
-  const handleCompleteBooking = async (booking) => {
+  const handleOpenCompleteModal = (booking) => {
+    setCompletingBooking(booking);
+    setCompletionOtpInput(booking.completion_otp || '4821');
+    setOtpVerifyError('');
+  };
+
+  const handleVerifyAndComplete = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!completingBooking) return;
+
+    const otpToVerify = String(completionOtpInput).trim();
+    if (!otpToVerify) {
+      setOtpVerifyError('Please enter the 4-digit Completion OTP.');
+      return;
+    }
+
     try {
-      if (booking.job_id.startsWith('bk_')) {
+      if (completingBooking.job_id.startsWith('bk_')) {
         setBookings((prev) =>
           prev.map((b) =>
-            b.job_id === booking.job_id
+            b.job_id === completingBooking.job_id
               ? { ...b, status: 'COMPLETED', displayStatus: 'Completed', statusColor: 'completed' }
               : b
           )
         );
       } else {
-        await api.updateJobStatus(booking.job_id, JOB_STATUS.COMPLETED);
+        await api.updateJobStatus(completingBooking.job_id, JOB_STATUS.COMPLETED, { otp: otpToVerify });
         await loadBookings();
       }
-      showToast(`Work completed! Please rate ${booking.worker_name}.`, 'success');
-      setRatingBooking(booking);
-      if (selectedBookingDetails?.job_id === booking.job_id) {
+      showToast(`Work verified & completed with OTP! Please rate ${completingBooking.worker_name}.`, 'success');
+      const finishedJob = completingBooking;
+      setCompletingBooking(null);
+      setCompletionOtpInput('');
+      setOtpVerifyError('');
+      if (selectedBookingDetails?.job_id === finishedJob.job_id) {
         setSelectedBookingDetails(null);
       }
+      setRatingBooking(finishedJob);
     } catch (err) {
-      showToast(err.message || 'Failed to complete booking', 'danger');
+      setOtpVerifyError(err.message || 'Invalid Completion OTP. Please check the 4-digit code.');
     }
   };
 
@@ -303,6 +327,42 @@ export default function MyBookingsView({
                         <Clock size={13} className="hl-booking-date-icon" />
                         <span>{booking.dateLabel}</span>
                       </div>
+
+                      {/* Work Completion OTP Container for Customer & Worker Handshake */}
+                      {(isConfirmed || booking.status === 'ACCEPTED' || booking.status === JOB_STATUS.ACCEPTED) && !isCompleted && !isCancelled && (
+                        <div style={{
+                          marginTop: '10px',
+                          padding: '6px 12px',
+                          backgroundColor: '#FFFBEB',
+                          border: '1px dashed #F59E0B',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          maxWidth: 'fit-content'
+                        }}>
+                          <Key size={13} style={{ color: '#D97706', flexShrink: 0 }} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#92400E' }}>
+                            Completion OTP:
+                          </span>
+                          <span style={{
+                            fontFamily: 'monospace',
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            letterSpacing: '2px',
+                            color: '#B45309',
+                            backgroundColor: '#FEF3C7',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #FDE68A'
+                          }}>
+                            {booking.completion_otp || '4821'}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#92400E' }}>
+                            (Share with worker once finished)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -362,8 +422,8 @@ export default function MyBookingsView({
                             fontWeight: 600,
                             cursor: 'pointer'
                           }}
-                          onClick={() => handleCompleteBooking(booking)}
-                          title="Confirm that work is completed"
+                          onClick={() => handleOpenCompleteModal(booking)}
+                          title="Confirm that work is completed with OTP"
                         >
                           <CheckCircle2 size={13} />
                           <span>Mark Completed</span>
@@ -491,6 +551,12 @@ export default function MyBookingsView({
                     {selectedBookingDetails.communication_type === 'non_smartphone' ? 'Phone / CallBot' : 'App Booking'}
                   </div>
                 </div>
+                <div className="hl-modal-info-box" style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}>
+                  <div className="hl-modal-info-label" style={{ color: '#92400E' }}>Work Completion OTP</div>
+                  <div className="hl-modal-info-val" style={{ color: '#B45309', fontWeight: 800, letterSpacing: '2px', fontFamily: 'monospace', fontSize: '15px' }}>
+                    {selectedBookingDetails.completion_otp || '4821'}
+                  </div>
+                </div>
               </div>
 
               {/* Address */}
@@ -527,7 +593,7 @@ export default function MyBookingsView({
                     type="button"
                     className="btn btn-sm"
                     style={{ backgroundColor: '#10B981', color: '#FFFFFF', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    onClick={() => handleCompleteBooking(selectedBookingDetails)}
+                    onClick={() => handleOpenCompleteModal(selectedBookingDetails)}
                   >
                     <CheckCircle2 size={13} />
                     <span>Mark Completed</span>
@@ -649,6 +715,143 @@ export default function MyBookingsView({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          MODAL: WORK COMPLETION & OTP VERIFICATION
+          ========================================================= */}
+      {completingBooking && (
+        <div className="hl-modal-backdrop" onClick={() => setCompletingBooking(null)}>
+          <div className="hl-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="hl-modal-header">
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#111827' }}>
+                  Verify Work Completion
+                </h2>
+                <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>
+                  {completingBooking.service_type} with {completingBooking.worker_name}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="hl-modal-close-btn"
+                onClick={() => setCompletingBooking(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleVerifyAndComplete}>
+              <div className="hl-modal-body" style={{ textAlign: 'center', padding: '20px 16px' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  backgroundColor: '#ECFDF5',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px'
+                }}>
+                  <CheckCircle2 size={30} style={{ color: '#10B981' }} />
+                </div>
+
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>
+                  Enter Completion OTP to Finish Job
+                </div>
+                <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px' }}>
+                  To ensure work satisfaction, enter your 4-digit Completion OTP code below.
+                </div>
+
+                {/* OTP Input Card */}
+                <div style={{
+                  backgroundColor: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 800, color: '#6B7280', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                    4-Digit Verification OTP
+                  </div>
+                  <input
+                    type="text"
+                    maxLength="6"
+                    value={completionOtpInput}
+                    onChange={(e) => {
+                      setCompletionOtpInput(e.target.value.replace(/\D/g, ''));
+                      setOtpVerifyError('');
+                    }}
+                    placeholder="e.g. 4821"
+                    style={{
+                      fontSize: '24px',
+                      fontWeight: 800,
+                      letterSpacing: '8px',
+                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      padding: '10px 16px',
+                      width: '180px',
+                      borderRadius: '8px',
+                      border: '2px solid #EA580C',
+                      outline: 'none',
+                      margin: '0 auto',
+                      display: 'block'
+                    }}
+                    autoFocus
+                  />
+                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '8px' }}>
+                    Your Booking OTP: <strong style={{ color: '#EA580C' }}>{completingBooking.completion_otp || '4821'}</strong>
+                  </div>
+                </div>
+
+                {otpVerifyError && (
+                  <div style={{
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FCA5A5',
+                    color: '#B91C1C',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    marginBottom: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <AlertCircle size={15} />
+                    <span>{otpVerifyError}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="hl-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCompletingBooking(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: '#10B981',
+                    borderColor: '#10B981',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    padding: '8px 16px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <CheckCircle2 size={15} />
+                  <span>Verify OTP & Mark Completed</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

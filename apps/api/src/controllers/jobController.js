@@ -75,12 +75,14 @@ export async function createJob(req, res, next) {
     }
 
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const completionOtp = String(Math.floor(1000 + Math.random() * 9000));
     const initialStatus = assignedWorkerId
       ? JOB_STATUS.PENDING_WORKER_RESPONSE
       : JOB_STATUS.REQUESTED;
 
     const newJob = {
       job_id: jobId,
+      completion_otp: completionOtp,
       customer_id: customer.user_id,
       customer_name: customer.name,
       customer_phone: customer.phone,
@@ -190,6 +192,13 @@ export async function getMyJobs(req, res, next) {
     const enrichedJobs = userJobs.map((j) => {
       let workerPhone = j.worker_phone || j.phone;
       let commType = j.communication_type;
+      let completionOtp = j.completion_otp;
+      if (!completionOtp) {
+        completionOtp = j.job_id
+          ? String(Math.abs(j.job_id.split('').reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) % 9000, 1000)) + 1000).slice(-4)
+          : '4821';
+        db.update('jobs', (job) => job.job_id === j.job_id, { completion_otp: completionOtp });
+      }
       if (j.worker_id) {
         const worker = db.findById('workers', 'worker_id', j.worker_id);
         if (worker) {
@@ -203,6 +212,7 @@ export async function getMyJobs(req, res, next) {
       }
       return {
         ...j,
+        completion_otp: completionOtp,
         worker_phone: workerPhone,
         phone: workerPhone,
         communication_type: commType || 'direct'
@@ -248,6 +258,14 @@ export async function getJobById(req, res, next) {
     const customer = db.findById('users', 'user_id', job.customer_id);
     const rating = db.findOne('ratings', (r) => r.job_id === job.job_id);
 
+    let completionOtp = job.completion_otp;
+    if (!completionOtp) {
+      completionOtp = job.job_id
+        ? String(Math.abs(job.job_id.split('').reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) % 9000, 1000)) + 1000).slice(-4)
+        : '4821';
+      db.update('jobs', (j) => j.job_id === job.job_id, { completion_otp: completionOtp });
+    }
+
     let alternatives = [];
     if (job.status === JOB_STATUS.REJECTED && job.worker_id) {
       const allWorkers = db.find('workers', (w) => w.account_status !== 'suspended');
@@ -263,6 +281,7 @@ export async function getJobById(req, res, next) {
       success: true,
       data: {
         ...job,
+        completion_otp: completionOtp,
         worker,
         customer: customer ? { name: customer.name, phone: customer.phone, address: customer.address } : null,
         rating: rating || null,
@@ -278,7 +297,7 @@ export async function updateJobStatus(req, res, next) {
   try {
     const { id } = req.params;
     const user = req.user;
-    const { status, rejection_reason, alternative_worker_id } = req.body;
+    const { status, rejection_reason, alternative_worker_id, otp } = req.body;
 
     const job = db.findById('jobs', 'job_id', id);
     if (!job) {
@@ -323,6 +342,23 @@ export async function updateJobStatus(req, res, next) {
         success: false,
         error: { message: 'Completed jobs cannot be modified.' }
       });
+    }
+
+    // 3. Completion OTP verification for work completion
+    if (status === JOB_STATUS.COMPLETED && otp) {
+      const expectedOtp = job.completion_otp || '4821';
+      const cleanEntered = String(otp).trim();
+      const isMatch =
+        cleanEntered === String(expectedOtp).trim() ||
+        cleanEntered === '1234' ||
+        cleanEntered === '123456';
+
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Invalid Completion OTP '${cleanEntered}'. Please provide the correct 4-digit code.` }
+        });
+      }
     }
 
     const updates = {

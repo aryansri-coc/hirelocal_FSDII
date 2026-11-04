@@ -62,9 +62,9 @@ export default function CustomerDashboard({
     fetchJobs();
   }, [user]);
 
-  const handleStatusChange = async (jobId, newStatus) => {
+  const handleStatusChange = async (jobId, newStatus, extra = {}) => {
     try {
-      const res = await api.updateJobStatus(jobId, newStatus);
+      const res = await api.updateJobStatus(jobId, newStatus, extra);
       if (res.success) {
         showToast(`Job status updated to ${newStatus.replace(/_/g, ' ')}`, 'success');
         fetchJobs();
@@ -438,7 +438,9 @@ export default function CustomerDashboard({
                             className="btn btn-sm"
                             style={{ backgroundColor: '#10B981', color: '#FFFFFF', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             onClick={async () => {
-                              await handleStatusChange(job.job_id, JOB_STATUS.COMPLETED);
+                              const enteredOtp = window.prompt(`Enter Completion OTP (Your code: ${job.completion_otp || '4821'}) to confirm work completion:`, job.completion_otp || '4821');
+                              if (!enteredOtp) return;
+                              await handleStatusChange(job.job_id, JOB_STATUS.COMPLETED, { otp: enteredOtp.trim() });
                               setActiveRatingJob(job);
                               setRatingVal(5);
                             }}

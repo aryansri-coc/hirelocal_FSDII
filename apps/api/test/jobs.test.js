@@ -128,4 +128,52 @@ describe('Day-Based Booking Lifecycle & Status Machine API', () => {
     assert.equal(res.data.success, true);
     assert.equal(res.data.data.job.status, JOB_STATUS.COMPLETED);
   });
+
+  test('PATCH /api/jobs/:id/status should reject completion with invalid OTP and accept valid OTP', async () => {
+    const createRes = await apiRequest('/api/jobs', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${customerToken}` },
+      body: {
+        service_type: 'Plumber',
+        required_date: '2026-11-15',
+        preferred_time: 'morning_9_12',
+        address: 'Sector 62, Mohali',
+        description: 'Tap leakage'
+      }
+    });
+    const newJobId = createRes.data.data.job.job_id;
+    const completionOtp = createRes.data.data.job.completion_otp;
+    assert.ok(completionOtp, 'Job must have a completion_otp generated');
+
+    await apiRequest(`/api/jobs/${newJobId}/status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${workerToken}` },
+      body: { status: JOB_STATUS.ACCEPTED }
+    });
+
+    // 1. Invalid OTP
+    const resBad = await apiRequest(`/api/jobs/${newJobId}/status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${customerToken}` },
+      body: {
+        status: JOB_STATUS.COMPLETED,
+        otp: '0000'
+      }
+    });
+    assert.equal(resBad.status, 400);
+    assert.ok(resBad.data.error.message.includes('Invalid Completion OTP'));
+
+    // 2. Valid OTP
+    const resGood = await apiRequest(`/api/jobs/${newJobId}/status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${customerToken}` },
+      body: {
+        status: JOB_STATUS.COMPLETED,
+        otp: completionOtp
+      }
+    });
+    assert.equal(resGood.status, 200);
+    assert.equal(resGood.data.success, true);
+    assert.equal(resGood.data.data.job.status, JOB_STATUS.COMPLETED);
+  });
 });

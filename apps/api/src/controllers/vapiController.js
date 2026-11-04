@@ -223,7 +223,7 @@ export async function handleVapiKnowledgeQuery(req, res, next) {
         dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका स्वागत है। आपके लिए एक नया काम पेंडिंग है: ${pendingJob.service_type || existingWorker.profession} का काम, स्थान ${pendingJob.address || 'मोहाली'}, दैनिक मजदूरी ₹${pendingJob.estimated_cost || existingWorker.daily_rate}। क्या आप यह काम स्वीकार करते हैं? कृपया 'हाँ' या 'ना' बताएं।`;
       } else if (existingWorker && ongoingJob) {
         isRegistered = true;
-        dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका स्वागत है। आपका ${ongoingJob.service_type || existingWorker.profession} का काम चल रहा है। क्या आपने यह काम पूरा कर लिया है? अगर काम पूरा हो गया है, तो कृपया 'काम पूरा हो गया' कहें या 1 दबाएँ।`;
+        dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका स्वागत है। आपका ${ongoingJob.service_type || existingWorker.profession} का काम चल रहा है। क्या आपने काम पूरा कर लिया है? काम पूरा करने के लिए कृपया ग्राहक का 4-अंकों का पूर्णता ओटीपी (OTP) बोलें।`;
       } else if (existingWorker) {
         isRegistered = true;
         dynamicGreeting = `नमस्ते ${existingWorker.name} जी! HireLocal में आपका फिर से स्वागत है। आप एक वेरीफाइड ${existingWorker.profession} के रूप में रजिस्टर्ड हैं। आज हम आपकी क्या सहायता कर सकते हैं?`;

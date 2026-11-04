@@ -554,12 +554,13 @@ describe('Vapi AI Voice Assistant Integration API', () => {
     assert.ok(res.data.assistantOverrides.firstMessage.includes('काम चल रहा है') || res.data.assistantOverrides.firstMessage.includes('काम पूरा'));
   });
 
-  test('POST /api/vapi/ask-project-knowledge should transition accepted job to COMPLETED when worker says काम पूरा हो गया', async () => {
+  test('POST /api/vapi/ask-project-knowledge should prompt for OTP and transition accepted job to COMPLETED when OTP matches', async () => {
     const { db } = await import('../../../database/db.js');
     const worker = db.findOne('workers', (w) => w.phone === '9827033445');
-    const testJobId = `job_test_complete_${Date.now()}`;
+    const testJobId = `job_test_complete_otp_${Date.now()}`;
     db.insert('jobs', {
       job_id: testJobId,
+      completion_otp: '4821',
       customer_id: 'usr_customer_1',
       customer_name: 'Customer Test',
       customer_phone: '9876501234',
@@ -573,37 +574,61 @@ describe('Vapi AI Voice Assistant Integration API', () => {
       created_at: new Date().toISOString()
     });
 
-    const payload = {
+    // 1. Without OTP: Assistant prompts for customer's 4-digit OTP
+    const payloadWithoutOtp = {
       message: {
         call: {
-          id: 'call_voice_complete_session_1',
-          customer: {
-            number: '+919827033445'
-          }
+          id: 'call_voice_complete_session_otp_1',
+          customer: { number: '+919827033445' }
         },
         toolCalls: [
           {
-            id: 'call_complete_tool_001',
+            id: 'call_complete_tool_prompt',
             type: 'function',
             function: {
               name: 'ask_project_knowledge',
-              arguments: {
-                question: 'काम पूरा हो गया है जी'
-              }
+              arguments: { question: 'काम पूरा हो गया है जी' }
             }
           }
         ]
       }
     };
 
-    const res = await apiRequest('/api/vapi/ask-project-knowledge', {
+    const res1 = await apiRequest('/api/vapi/ask-project-knowledge', {
       method: 'POST',
-      body: payload
+      body: payloadWithoutOtp
     });
 
-    assert.equal(res.status, 200);
-    assert.equal(res.data.results[0].toolCallId, 'call_complete_tool_001');
-    assert.ok(res.data.results[0].result.includes('पूरा दर्ज कर लिया गया है'));
+    assert.equal(res1.status, 200);
+    assert.ok(res1.data.results[0].result.includes('ओटीपी') || res1.data.results[0].result.includes('OTP'));
+
+    // 2. With OTP: Assistant verifies OTP and marks COMPLETED
+    const payloadWithOtp = {
+      message: {
+        call: {
+          id: 'call_voice_complete_session_otp_1',
+          customer: { number: '+919827033445' }
+        },
+        toolCalls: [
+          {
+            id: 'call_complete_tool_verify',
+            type: 'function',
+            function: {
+              name: 'ask_project_knowledge',
+              arguments: { question: 'ओटीपी 4821' }
+            }
+          }
+        ]
+      }
+    };
+
+    const res2 = await apiRequest('/api/vapi/ask-project-knowledge', {
+      method: 'POST',
+      body: payloadWithOtp
+    });
+
+    assert.equal(res2.status, 200);
+    assert.ok(res2.data.results[0].result.includes('पूरा दर्ज कर लिया गया है') || res2.data.results[0].result.includes('ओटीपी सत्यापित'));
 
     const updatedJob = db.findById('jobs', 'job_id', testJobId);
     assert.equal(updatedJob.status, 'COMPLETED');
